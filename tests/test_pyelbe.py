@@ -1,5 +1,5 @@
 import pytest
-from src.pyelbe.hsb.hsb_21030_10 import moment_x_reference
+from src.pyelbe.hsb.hsb_21030_10 import moment_x_reference, moment_x_reference_markdown
 
 
 def test_moment_x_reference():
@@ -26,4 +26,14 @@ def test_moment_x_reference():
     # test 6: call function with strings, test type and value
     # TODO: does not work, add exception handling
     assert moment_x_reference("1", "1", "1", "1", "1") == 4
+
+def test_moment_x_reference_markdown():
+    """Test moment_x_reference_markdown"""
+    
+    _, md_f =  moment_x_reference_markdown(0, 0, 0, 0, 0)
+
+    # test 1: call function with all 0 values, test type and value
+    assert md_f == """$$0.0 = 0 - 0 \cdot 0 + 0 \cdot 0$$"""
+    assert type(md_f) == str
+
     
