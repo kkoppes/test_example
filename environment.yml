@@ -1,0 +1,10 @@
+name: pagtools
+dependencies:
+  - python=3.9
+  - conda-pack
+  - pip
+  - pytest
+  - black
+  - pylint
+  - pip:
+
