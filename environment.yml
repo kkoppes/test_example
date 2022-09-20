@@ -1,6 +1,6 @@
 name: pagtools
 dependencies:
-  - python=3.9
+  - python=3.10
   - conda-pack
   - pip
   - pytest
