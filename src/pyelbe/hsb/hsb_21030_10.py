@@ -2,11 +2,13 @@
 
 from array import array
 from collections import namedtuple
+import copy
 from dataclasses import dataclass, field
 import math
 from typing import List
 import numpy as np
 import pandas as pd
+
 
 def moment_x_reference(
     moment_x_p: float,
@@ -81,7 +83,6 @@ def moment_x_reference_markdown(
     )
     # pylint: enable=anomalous-backslash-in-string
     return (markdown_formula, markdown_filled)
-
 
 
 def moment_y_reference(
@@ -159,7 +160,6 @@ def moment_y_reference_markdown(
     return markdown_formula, markdown_filled
 
 
-
 def moment_z_reference(
     moment_z_p: float,
     force_x: float,
@@ -234,6 +234,7 @@ def moment_z_reference_markdown(
     )
     # pylint: enable=anomalous-backslash-in-string
     return markdown_formula, markdown_filled
+
 
 def moments_transformation(
     moments: namedtuple, forces: namedtuple, application_point: namedtuple
@@ -401,6 +402,12 @@ class Fastener:
     material: str = "mymaterial"
 
     # TODO: add material to fastener (from material database)
+    def copy(self):
+        """
+        Copy fastener
+        """
+        return copy.deepcopy(self)
+        
 
 
 @dataclass
@@ -411,6 +418,7 @@ class FastenerGroup:
 
     name: str
     fasteners: list
+    fastener_names: list = field(init=False)
     X: array = field(init=False)
     Y: array = field(init=False)
     # TODO: add Z?
@@ -432,6 +440,8 @@ class FastenerGroup:
         if self.name == "":
             self.name = "FastenerGroup"
 
+        # fastener names
+        self.fastener_names = [fastener.name for fastener in self.fasteners]
         # X array from fasteners
         self.X = np.array([fastener.x_coord for fastener in self.fasteners])
         # Y array from fasteners
@@ -648,13 +658,22 @@ class HSB_21030_01:
         # check if fastener is in tension or compression
         self.fastener_tension = self.check_fastener_tension()
 
+        # if any fasteners are in compression, recalcultate with fastener tension allowable 0
+        # update fastener tension allowable
+        if [
+            item
+            for item in self.fastener_tension
+            if item[1] == False
+        ]:
+            self.compression_update = True
+            print("Fasteners in compression, iterate calculation!")
+
         self.dataframe = self.make_dataframe()
 
         self.cogs = self.make_cogs()
 
-        #update fastener group with 0 tension allowable for fasteners under compression
-        #self.fastener_group.update_fasteners_tension_allowable(self.fastener_tension)
-
+        # update fastener group with 0 tension allowable for fasteners under compression
+        # self.fastener_group.update_fasteners_tension_allowable(self.fastener_tension)
 
     def calculate_alpha(self) -> float:
         """
@@ -851,6 +870,7 @@ class HSB_21030_01:
     def make_dataframe(self):
         """make dataframe including fasteners, attributes, forces and reserve factors"""
         df = {
+
             "X": self.fastener_group.X,
             "Y": self.fastener_group.Y,
             "Shear": self.fastener_group.shear,
@@ -862,14 +882,20 @@ class HSB_21030_01:
             "Shear Reserve Factor": self.reserve_factor_shear,
             "Tension Reserve Factor": self.reserve_factor_tension,
         }
+        
         return df
 
     def check_fastener_tension(self):
+        """check if fasteners are in tension"""
+        tension = []
         for i, t_force in enumerate(self.tension_forces):
-            if i < 0:
+            if t_force < 0:
                 print(f"fastener {i} is in compression: {t_force}")
+                tension.append((i, False))
             else:
                 print(f"fastener {i} is in tension: {t_force}")
+                tension.append((i, True))
+        return tension
 
     def make_cogs(self):
         """make dataframe including fasteners, attributes, forces and reserve factors"""
@@ -880,9 +906,63 @@ class HSB_21030_01:
             "centroid_ys": self.fastener_group.centroid_ys,
             "centroid_zs": self.fastener_group.centroid_zs,
             "centroid_yt": self.fastener_group.centroid_yt,
-            "centroid_zt": self.fastener_group.centroid_zt
+            "centroid_zt": self.fastener_group.centroid_zt,
         }
         return df
+
+
+def iterate_calc(HSB21030_calc):
+    # check if fasteners are in tension
+    # if not, update tension allowable with 0
+    # create new fastener_group
+    fasteners = HSB21030_calc.fastener_group.fasteners
+    fastener_iter = []
+    dummy_fast = []
+    for i, tension in enumerate(HSB21030_calc.fastener_tension):
+        if tension[1] == False:
+            dummy_fast_tmp = fasteners[i].copy()
+            dummy_fast.append(dummy_fast_tmp)
+            rep_fastener = fasteners[i]
+            rep_fastener.__setattr__("tension_allowable", 0)
+            fastener_iter.append(rep_fastener)
+            
+        else:
+            fastener_iter.append(fasteners[i])
+    
+    dummy_fastener = create_dummmy_fastener(dummy_fast)
+    fastener_iter += [dummy_fastener]
+    fastener_group_iter = FastenerGroup(f"{HSB21030_calc.fastener_group.name}_iter", fastener_iter)
+    
+    iteration = HSB_calc = HSB_21030_01(
+        id="HSB_21030_01",
+        fastener_group=fastener_group_iter,
+        forces=HSB21030_calc.forces,
+        moments=HSB21030_calc.moments,
+        application_point=HSB21030_calc.application_point,
+        reference_point=HSB21030_calc.reference_point,
+    )
+
+    return iteration
+
+def absmaxND(a, axis=None):
+    amax = a.max(axis)
+    amin = a.min(axis)
+    return np.where(-amin > amax, amin, amax)
+
+def create_dummmy_fastener(dummy_fast):
+    """create dummy fastener as average for fasteners in compression"""
+
+    dummy_fastener = Fastener(
+        name="dummy_fastener",
+        specification="dummy_fastener",
+        x_coord=np.mean([fast.x_coord for fast in dummy_fast]),
+        y_coord=max([fast.y_coord for fast in dummy_fast], key=abs),
+        z_coord=np.mean([fast.z_coord for fast in dummy_fast]),
+        shear_allowable=0.0001,
+        tension_allowable=99999999,
+    )
+    
+    return dummy_fastener
 
 def riv_field(forces, moments, application_point, rivets):
     """

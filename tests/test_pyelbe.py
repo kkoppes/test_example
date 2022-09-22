@@ -465,3 +465,4 @@ def test_integration():
     assert HSB_calc.cogs["centroid_zs"] == centers_of_gravity[4]
     assert HSB_calc.cogs["centroid_yt"] == centers_of_gravity[5]
     assert HSB_calc.cogs["centroid_zt"] == centers_of_gravity[6]
+
