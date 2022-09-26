@@ -6,6 +6,4 @@ dependencies:
   - pytest
   - black
   - pylint
-  - sphinx
-  - sphinx_rtd_theme
 

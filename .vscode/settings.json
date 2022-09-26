@@ -5,14 +5,14 @@
         "tests"
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
-
-    ,
+    "python.testing.pytestEnabled": true,
+    "python.analysis.extraPaths": ["${workspaceFolder}"],
     "files.exclude": {
         "**/.git": false
 },
 "sonarlint.connectedMode.project": {
     "connectionId": "http-localhost-9000-test",
     "projectKey": "test"
-}
+},
+"editor.rulers": [100,120]
 }

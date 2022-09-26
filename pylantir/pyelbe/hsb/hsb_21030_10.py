@@ -8,293 +8,27 @@ import math
 from typing import List
 import numpy as np
 import pandas as pd
-
-
-def moment_x_reference(
-    moment_x_p: float,
-    force_y: float,
-    force_z: float,
-    z_coord_p: float,
-    y_coord_p: float,
-    z_coord_u: float = 0,
-    y_coord_u: float = 0,
-) -> float:
-    """
-    Calculates the moment of the force about the point of application in the x direction.
-    NOTE: Changed slightly from the HSB to insert absolute coordinates for both applied and reference points
-    args:
-        m_moment_x_px_p(float): moment of the force
-                                about the point of application in the x direction
-        force_y(float): force in the y direction
-        force_z(float): force in the z direction
-        z_coord_p(float): z coordinate of the point of application of the force
-        y_coord_p(float): y coordinate of the point of application of the force
-        y_coord_u(float): y coordinate of the point of reference of the force
-    returns:
-        moment_mxu(float): moment of the force about the point of application in the x direction
-    """
-
-    moment_x_ref = (
-        moment_x_p
-        - force_y * (z_coord_p - z_coord_u)
-        + force_z * (y_coord_p - y_coord_u)
-    )
-    return float(moment_x_ref)
-
-
-# markdown of this function above
-def moment_x_reference_markdown(
-    moment_x_p: float,
-    force_y: float,
-    force_z: float,
-    z_coord_p: float,
-    y_coord_p: float,
-    z_coord_u: float = 0,
-    y_coord_u: float = 0,
-) -> tuple:
-    """
-    Create markdown in LaTeX for moment_x_reference
-    NOTE: Changed slightly from the HSB to insert absolute coordinates for both applied and reference points
-    args:
-        moment_x_p(float): moment of the force
-                                about the point of application in the x direction
-        force_y(float): force in the y direction
-        force_z(float): force in the z direction
-        z_coord_p(float): z coordinate of the point of application of the force
-        y_coord_p(float): y coordinate of the point of application of the force
-        y_coord_u(float): y coordinate of the point of reference of the force
-    returns:
-        markdown(str): markdown in LaTeX for moment_x_reference
-    """
-
-    moment_x_ref = moment_x_reference(
-        moment_x_p, force_y, force_z, z_coord_p, y_coord_p, z_coord_u, y_coord_u
-    )
-    # for LaTeX
-    # pylint: disable=anomalous-backslash-in-string
-    markdown_formula = """$$
-    M_{xU} = M_{xP} - F_{y}\cdot (z_{P} - z_{U}) + F_{z}\cdot (y_{P} - y_{U})
-    $$
-
-    """
-    markdown_filled = (
-        f"$${moment_x_ref} = "
-        f"{moment_x_p} - {force_y} \cdot ({z_coord_p} - {z_coord_u}) + {force_z} \cdot ({y_coord_p} - {y_coord_u})$$"
-    )
-    # pylint: enable=anomalous-backslash-in-string
-    return (markdown_formula, markdown_filled)
-
-
-def moment_y_reference(
-    moment_y_p: float,
-    force_x: float,
-    force_z: float,
-    x_coord_p: float,
-    z_coord_p: float,
-    x_coord_u: float = 0,
-    z_coord_u: float = 0,
-) -> float:
-    """
-    Calculate moment_y_reference
-    args:
-        moment_y_p(float): moment of the force
-                                about the point of application in the y direction
-        force_x(float): force in the x direction
-        force_z(float): force in the z direction
-        x_coord_p(float): x coordinate of the point of application of the force
-        z_coord_p(float): z coordinate of the point of application of the force
-        x_coord_u(float): x coordinate of the point of reference of the force
-        z_coord_u(float): z coordinate of the point of reference of the force
-    returns:
-        moment_myu(float): moment of the force about the point of application in the y direction
-    """
-
-    moment_y_ref = (
-        moment_y_p
-        + force_x * (z_coord_p - z_coord_u)
-        - force_z * (x_coord_p - x_coord_u)
-    )
-    return float(moment_y_ref)
-
-
-def moment_y_reference_markdown(
-    moment_y_p: float,
-    force_x: float,
-    force_z: float,
-    x_coord_p: float,
-    z_coord_p: float,
-    x_coord_u: float = 0,
-    z_coord_u: float = 0,
-) -> tuple:
-    """
-    Create markdown in LaTeX for moment_y_reference
-    NOTE: Changed slightly from the HSB to insert absolute coordinates for both applied and reference points
-    args:
-        moment_y_p(float): moment of the force
-                                about the point of application in the y direction
-        force_x(float): force in the x direction
-        force_z(float): force in the z direction
-        x_coord_p(float): x coordinate of the point of application of the force
-        z_coord_p(float): z coordinate of the point of application of the force
-        x_coord_u(float): x coordinate of the point of reference of the force
-        z_coord_u(float): z coordinate of the point of reference of the force
-    returns:
-        markdown(str): markdown in LaTeX for moment_y_reference
-    """
-
-    moment_y_ref = moment_y_reference(
-        moment_y_p, force_x, force_z, x_coord_p, z_coord_p, x_coord_u, z_coord_u
-    )
-    # for LaTeX
-    # pylint: disable=anomalous-backslash-in-string
-    markdown_formula = """$$
-    M_{yU} = M_{yP} + F_{x}\cdot (z_{P} - z_{U}) - F_{z}\cdot (x_{P} - x_{U})
-    $$
-
-    """
-    markdown_filled = (
-        f"$${moment_y_ref} = "
-        f"{moment_y_p} + {force_x} \cdot ({z_coord_p} - {z_coord_u}) - {force_z} \cdot ({x_coord_p} - {x_coord_u})$$"
-    )
-    # pylint: enable=anomalous-backslash-in-string
-    return markdown_formula, markdown_filled
-
-
-def moment_z_reference(
-    moment_z_p: float,
-    force_x: float,
-    force_y: float,
-    x_coord_p: float,
-    y_coord_p: float,
-    x_coord_u: float = 0,
-    y_coord_u: float = 0,
-) -> float:
-    """
-    Calculates the moment of the force about the point of application in the z direction.
-    args:
-        moment_z_p(float): moment of the force
-                                about the point of application in the z direction
-        force_x(float): force in the x direction
-        force_y(float): force in the y direction
-        x_coord_p(float): x coordinate of the point of application of the force
-        y_coord_p(float): y coordinate of the point of application of the force
-        x_coord_u(float): x coordinate of the point of reference of the force
-        y_coord_u(float): y coordinate of the point of reference of the force
-    returns:
-        moment_z_ref(float): moment of the force about the point of application in the z direction
-    """
-
-    moment_z_ref = (
-        moment_z_p
-        - force_x * (y_coord_p - y_coord_u)
-        + force_y * (x_coord_p - x_coord_u)
-    )
-
-    return float(moment_z_ref)
-
-
-def moment_z_reference_markdown(
-    moment_z_p: float,
-    force_x: float,
-    force_y: float,
-    x_coord_p: float,
-    y_coord_p: float,
-    x_coord_u: float = 0,
-    y_coord_u: float = 0,
-) -> tuple:
-    """
-    Create markdown in LaTeX for moment_z_reference
-    NOTE: Changed slightly from the HSB to insert absolute coordinates for both applied and reference points
-    args:
-        moment_z_p(float): moment of the force
-                                about the point of application in the z direction
-        force_x(float): force in the x direction
-        force_y(float): force in the y direction
-        x_coord_p(float): x coordinate of the point of application of the force
-        y_coord_p(float): y coordinate of the point of application of the force
-        x_coord_u(float): x coordinate of the point of reference of the force
-        y_coord_u(float): y coordinate of the point of reference of the force
-    returns:
-        markdown(str): markdown in LaTeX for moment_z_reference
-    """
-
-    moment_z_ref = moment_z_reference(
-        moment_z_p, force_x, force_y, x_coord_p, y_coord_p, x_coord_u, y_coord_u
-    )
-    # for LaTeX
-    # pylint: disable=anomalous-backslash-in-string
-    markdown_formula = """$$
-    M_{zU} = M_{zP} - F_{x}\cdot (y_{P} - y_{U}) + F_{y}\cdot (x_{P} - x_{U})
-    $$
-
-    """
-    markdown_filled = (
-        f"$${moment_z_ref} = "
-        f"{moment_z_p} - {force_x} \cdot ({y_coord_p} - {y_coord_u}) + {force_y} \cdot ({x_coord_p} - {x_coord_u})$$"
-    )
-    # pylint: enable=anomalous-backslash-in-string
-    return markdown_formula, markdown_filled
-
-
-def moments_transformation(
-    moments: namedtuple, forces: namedtuple, application_point: namedtuple
-) -> namedtuple:
-    """
-    Calculates the moments of the force about the point of application.
-    args:
-        moments(namedtuple): moments of the force about the point of application
-        forces(namedtuple): forces in the x, y, and z directions
-        application_point(namedtuple): point of application of the force
-        TODO: add reference_point(namedtuple): reference point
-    returns:
-        moments_u(namedtuple): moments of the force about the point of application
-    """
-
-    moment_x_u = moment_x_reference(
-        moments.moment_x,
-        forces.force_y,
-        forces.force_z,
-        application_point.y_coord,
-        application_point.z_coord,
-    )
-
-    moment_y_u = moment_y_reference(
-        moments.moment_y,
-        forces.force_x,
-        forces.force_z,
-        application_point.x_coord,
-        application_point.z_coord,
-    )
-
-    moment_z_u = moment_z_reference(
-        moments.moment_z,
-        forces.force_x,
-        forces.force_y,
-        application_point.x_coord,
-        application_point.y_coord,
-    )
-
-    moments_u = namedtuple(
-        "moments_u",
-        [
-            "moment_x_u",
-            "moment_y_u",
-            "moment_z_u",
-        ],
-    )
-
-    moments_u = moments_u(moment_x_u, moment_y_u, moment_z_u)
-
-    return moments_u
-
-
-# TODO: moments_transformation implemented with numpy array for speed and general use
+from .hsb_formulas import (moment_x_reference,
+moment_x_reference_markdown,
+moment_y_reference,
+moment_y_reference_markdown,
+moment_z_reference,
+moment_z_reference_markdown,
+moments_transformation)
 
 
 @dataclass
 class ReferencePoint:
     """
     Class for moment/load reference points
+
+    :param x_coord: x coordinate of the point of reference of the force
+    :type x_coord: float
+    :param y_coord: y coordinate of the point of reference of the force
+    :type y_coord: float
+    :param z_coord: z coordinate of the point of reference of the force
+    :type z_coord: float
+
     """
 
     name: str
@@ -306,6 +40,7 @@ class ReferencePoint:
     def __post_init__(self):
         """
         Post initialization of reference point
+
         """
         self.namedtuple = namedtuple(
             self.name,
@@ -326,6 +61,14 @@ class ReferencePoint:
 class Forces:
     """
     Class for forces
+
+    :param force_x: force in the x direction
+    :type force_x: float
+    :param force_y: force in the y direction
+    :type force_y: float
+    :param force_z: force in the z direction
+    :type force_z: float
+
     """
 
     name: str
@@ -333,6 +76,7 @@ class Forces:
     force_y: float
     force_z: float
     namedtuple: namedtuple = None
+    # TODO: add application point?
 
     def __post_init__(self):
         """
@@ -357,6 +101,14 @@ class Forces:
 class Moments:
     """
     Class for moments
+
+    :param moment_x: moment of the force about the point of application in the x direction
+    :type moment_x: float
+    :param moment_y: moment of the force about the point of application in the y direction
+    :type moment_y: float
+    :param moment_z: moment of the force about the point of application in the z direction
+    :type moment_z: float
+
     """
 
     name: str
@@ -364,6 +116,7 @@ class Moments:
     moment_y: float
     moment_z: float
     namedtuple: namedtuple = None
+    # TODO: add application point?
 
     def __post_init__(self):
         """
@@ -384,10 +137,28 @@ class Moments:
         )
 
 
+#TODO: make coordinates into tuple
+#pylint: disable=too-many-instance-attributes
 @dataclass
 class Fastener:
     """
     Class for fastener
+
+    :param name: name of the fastener
+    :type name: str
+    :param specification: specification of the fastener
+    :type specification: str
+    :param shear_allowable: shear allowable of the fastener
+    :type shear_allowable: float
+    :param tension_allowable: tension allowable of the fastener
+    :type tension_allowable: float
+    :param x_coord: x coordinate of the fastener
+    :type x_coord: float
+    :param y_coord: y coordinate of the fastener
+    :type y_coord: float
+    :param z_coord: z coordinate of the fastener
+    :type z_coord: float
+
     """
 
     name: str
@@ -407,13 +178,38 @@ class Fastener:
         Copy fastener
         """
         return copy.deepcopy(self)
-        
 
 
 @dataclass
 class FastenerGroup:
     """
     Class for fastener group
+
+    :param name: name of the fastener group
+    :type name: str
+    :param fasteners: list of fasteners in the fastener group
+    :type fasteners: list
+    :param fastener_names: list of fastener names in the fastener group
+    :type fastener_names: list
+    :param X: x coordinates of the fasteners in the fastener group
+    :type X: list
+    :param Y: y coordinates of the fasteners in the fastener group
+    :type Y: list
+    :param shear: shear allowables of the fasteners in the fastener group
+    :type shear: list
+    :param tension: tension allowables of the fasteners in the fastener group
+    :type tension: list
+    :param centroid_ys: y coordinate of the shear centroid of the fastener group
+    :type centroid_ys: namedtuple
+    :param centroid_yt: y coordinate of the tension centroid of the fastener group
+    :type centroid_yt: namedtuple
+    :param centroid_zs: z coordinate of the shear centroid of the fastener group
+    :type centroid_zs: namedtuple
+    :param centroid_zt: z coordinate of the tension centroid of the fastener group
+    :type centroid_zt: namedtuple
+    :param dataframe: dataframe of the fastener group
+    :type dataframe: pandas dataframe
+
     """
 
     name: str
@@ -435,6 +231,7 @@ class FastenerGroup:
     def __post_init__(self):
         """
         Post initialization of fastener group
+
         """
         # default name
         if self.name == "":
@@ -453,15 +250,12 @@ class FastenerGroup:
             [fastener.tension_allowable for fastener in self.fasteners]
         )
 
-        # centroid_ys = sum(fastener.Shear * fastener.X) / sum(fastener.Shear)
-        # centroid_zs = sum(fastener.Shear * fastener.Y) / sum(fastener.Shear)
         self.centroid_ys = self.calculate_centroid_ys()
         self.centroid_zs = self.calculate_centroid_zs()
 
-        # Calculation for tension assuming same material of rivets. If different materials are used,
-        # centroid_yt = sum(fastener.Tension * fastener.X) / sum(fastener.Tension)
-        # centroid_zt = sum(fastener.Tension * fastener.Y) / sum(fastener.Tension)
-        # allowables should be scaled by ratio of young moduli
+        # TODO: Calculation for tension assuming same material of rivets.
+        # If different materials are used, use E for scaling
+
         self.centroid_yt = self.calculate_centroid_yt()
         self.centroid_zt = self.calculate_centroid_zt()
 
@@ -469,17 +263,20 @@ class FastenerGroup:
         self.dataframe = self.create_dataframe()
 
     def calculate_centroid_ys(self) -> namedtuple:
-        """
+        r"""
         Calculates centroid of fastener group in y direction
+        y_{S} = \frac{\sum (F_{s,all,i}\cdot y_{i})}{\sum F_{s,all,i}}
         """
+
         centroid_ys = sum(
             [fastener.y_coord * fastener.shear_allowable for fastener in self.fasteners]
         ) / sum([fastener.shear_allowable for fastener in self.fasteners])
         return centroid_ys
 
     def calculate_centroid_zs(self) -> namedtuple:
-        """
+        r"""
         Calculates centroid of fastener group in z direction
+        z_{S} = \frac{\sum (F_{s,all,i}\cdot z_{i})}{\sum F_{s,all,i}}
         """
         centroid_zs = sum(
             [fastener.z_coord * fastener.shear_allowable for fastener in self.fasteners]
@@ -487,8 +284,9 @@ class FastenerGroup:
         return centroid_zs
 
     def calculate_centroid_yt(self) -> namedtuple:
-        """
+        r"""
         Calculates centroid of fastener group in y direction, TODO: scaled by E
+        y_{T} = \frac{\sum (F_{t,all,i}\cdot y_{i})}{\sum F_{t,all,i}}
         """
         centroid_yt = sum(
             [
@@ -499,8 +297,9 @@ class FastenerGroup:
         return centroid_yt
 
     def calculate_centroid_zt(self) -> namedtuple:
-        """
+        r"""
         Calculates centroid of fastener group in z direction, TODO: scaled by E
+        z_{T} = \frac{\sum (F_{t,all,i}\cdot z_{i})}{\sum F_{t,all,i}}
         """
         centroid_zt = sum(
             [
@@ -561,15 +360,30 @@ class FastenerGroup:
 
         return dataframe
 
+        #TODO: move dummy fastener here
 
 class HSB_21030_01:
     """
+
+    Internal load distribution of fastener groups 21030-01 Issue D Year 1989
+
+    Summary
+    This sheet provides a method to calculate the shear and tensile forces in fastener groups.
+    Key Words: Fastener group, shear force, tension force
+
+    This sheet provides a method to calculate the shear and tensile forces for each fastener in
+    riveted or bolted joints. The method is valid only for components that are sufficiently stiff in
+    the joint area.
+    For the static strength analyses the centroid of the fastener group is determined taking into
+    account the allowable forces of the fasteners. For fatigue analyses the stiffnesses of the
+    fasteners should be taken into account.
+
     Class for HSB 21030-01 fastener calculation
     """
 
     def __init__(
         self,
-        id: str,
+        name: str,
         fastener_group: FastenerGroup,
         forces: namedtuple,
         moments: namedtuple,
@@ -578,8 +392,9 @@ class HSB_21030_01:
     ):
         """
         Initialization of HSB 21030-01 fastener calculation
+
         """
-        self.id = id
+        self.name = name
         self.fastener_group = fastener_group
         self.forces = forces
         self.moments = moments
@@ -594,7 +409,12 @@ class HSB_21030_01:
 
         # calculate moment around centroid
         # TODO: make moments_s namedtuple
-        # moment_mxs = moment_mxu + forces[1] * cg_zs - forces[2] * cg_ys
+        # application point 2D yz plane
+        # reference point 2D yz plane
+        # moment translation on plane to centroid for tension
+
+        # self.moments_s = calculate_ms()
+
         self.moment_x_s = moment_x_reference(
             moment_x_p=self.moments_u.moment_x_u,
             force_y=self.forces.force_y,
@@ -660,11 +480,7 @@ class HSB_21030_01:
 
         # if any fasteners are in compression, recalcultate with fastener tension allowable 0
         # update fastener tension allowable
-        if [
-            item
-            for item in self.fastener_tension
-            if item[1] == False
-        ]:
+        if [item for item in self.fastener_tension if item[1] == False]:
             self.compression_update = True
             print("Fasteners in compression, iterate calculation!")
 
@@ -764,6 +580,14 @@ class HSB_21030_01:
         )
 
     def calculate_fastener_tension_force_f1(self) -> float:
+        r"""
+        3.3.3 Tensile forces in the fasteners
+        To balance the forces it is necessary to transform the applied loading into the principal 
+        axis system of the fastener group
+
+        F_{1,i} = F_{x}\cdot \frac{F_{t,all,i}}{\sum F_{t,all,i}}
+        """
+
         force_f1 = (
             self.forces.force_x
             * self.fastener_group.tension
@@ -790,6 +614,16 @@ class HSB_21030_01:
         return force_f3
 
     def calculate_fastener_tension_force(self) -> List[float]:
+        """
+        3.3.3 Tensile forces in the fasteners
+        To balance the forces it is necessary to transform the applied loading into the principal 
+        axis system of the fastener group
+        
+        :param self.force_f1: force 1
+        :param self.force_f2: force 2
+        :param self.force_f3: force 3
+        :return: tension forces
+        """
         force_ft = self.force_f1 + self.force_f2 - self.force_f3
         return force_ft
 
@@ -870,7 +704,6 @@ class HSB_21030_01:
     def make_dataframe(self):
         """make dataframe including fasteners, attributes, forces and reserve factors"""
         df = {
-
             "X": self.fastener_group.X,
             "Y": self.fastener_group.Y,
             "Shear": self.fastener_group.shear,
@@ -882,7 +715,7 @@ class HSB_21030_01:
             "Shear Reserve Factor": self.reserve_factor_shear,
             "Tension Reserve Factor": self.reserve_factor_tension,
         }
-        
+
         return df
 
     def check_fastener_tension(self):
@@ -911,6 +744,22 @@ class HSB_21030_01:
         return df
 
 
+def create_dummmy_fastener(dummy_fast):
+    """create dummy fastener as average for fasteners in compression"""
+
+    dummy_fastener = Fastener(
+        name="dummy_fastener",
+        specification="dummy_fastener",
+        x_coord=np.mean([fast.x_coord for fast in dummy_fast]),
+        y_coord=max([fast.y_coord for fast in dummy_fast], key=abs),
+        z_coord=np.mean([fast.z_coord for fast in dummy_fast]),
+        shear_allowable=0.0001,
+        tension_allowable=99999999,
+    )
+
+    return dummy_fastener
+
+
 def iterate_calc(HSB21030_calc):
     # check if fasteners are in tension
     # if not, update tension allowable with 0
@@ -925,16 +774,18 @@ def iterate_calc(HSB21030_calc):
             rep_fastener = fasteners[i]
             rep_fastener.__setattr__("tension_allowable", 0)
             fastener_iter.append(rep_fastener)
-            
+
         else:
             fastener_iter.append(fasteners[i])
-    
+
     dummy_fastener = create_dummmy_fastener(dummy_fast)
     fastener_iter += [dummy_fastener]
-    fastener_group_iter = FastenerGroup(f"{HSB21030_calc.fastener_group.name}_iter", fastener_iter)
-    
+    fastener_group_iter = FastenerGroup(
+        f"{HSB21030_calc.fastener_group.name}_iter", fastener_iter
+    )
+
     iteration = HSB_calc = HSB_21030_01(
-        id="HSB_21030_01",
+        name=f"{HSB21030_calc.name}_interation",
         fastener_group=fastener_group_iter,
         forces=HSB21030_calc.forces,
         moments=HSB21030_calc.moments,
@@ -943,120 +794,3 @@ def iterate_calc(HSB21030_calc):
     )
 
     return iteration
-
-def absmaxND(a, axis=None):
-    amax = a.max(axis)
-    amin = a.min(axis)
-    return np.where(-amin > amax, amin, amax)
-
-def create_dummmy_fastener(dummy_fast):
-    """create dummy fastener as average for fasteners in compression"""
-
-    dummy_fastener = Fastener(
-        name="dummy_fastener",
-        specification="dummy_fastener",
-        x_coord=np.mean([fast.x_coord for fast in dummy_fast]),
-        y_coord=max([fast.y_coord for fast in dummy_fast], key=abs),
-        z_coord=np.mean([fast.z_coord for fast in dummy_fast]),
-        shear_allowable=0.0001,
-        tension_allowable=99999999,
-    )
-    
-    return dummy_fastener
-
-def riv_field(forces, moments, application_point, rivets):
-    """
-    Rivet field calculation as given in HSB 21030-01
-
-    Args:
-        forces(float array): Applied forces for the rivet field (Fy,Fy,Fz)
-        moments(float array): applied moments for the rivet field (Mx,My,Mz)
-        application_point(float array): coordinates of the application point (X,Y,Z)
-        rivets(pandas DataFrame): DataFrame with rivet definition (position) and allowables.
-                                  Columns expected are (Shear,Tension,X,Y)
-
-    Returns:
-        res(DataFrame): Result Dataframe based on input DF and with appended result columns.
-        CGs(DataFrame): CG information from rivet field, to be used in plotting function.
-
-    """
-    moment_mxu = (
-        moments[0] - forces[1] * application_point[2] + forces[2] * application_point[1]
-    )
-    moment_myu = (
-        moments[1] + forces[0] * application_point[2] - forces[2] * application_point[0]
-    )
-    moment_mzu = (
-        moments[2] - forces[0] * application_point[1] + forces[1] * application_point[0]
-    )
-
-    cg_ys = sum(rivets.Shear * rivets.X) / sum(rivets.Shear)
-    cg_zs = sum(rivets.Shear * rivets.Y) / sum(rivets.Shear)
-    # Calculation for tension assuming same material of rivets. If different materials are used,
-    # allowables should be scaled by ratio of young moduli
-    cg_yt = sum(rivets.Tension * rivets.X) / sum(rivets.Tension)
-    cg_zt = sum(rivets.Tension * rivets.Y) / sum(rivets.Tension)
-
-    moment_mxs = moment_mxu + forces[1] * cg_zs - forces[2] * cg_ys
-    moment_mys = moment_myu - forces[0] * cg_zt
-    moment_mzs = moment_mzu + forces[0] * cg_yt
-
-    alpha = (
-        math.atan(
-            2
-            * sum(rivets.Tension * (rivets.X - cg_yt) * (rivets.Y - cg_zt))
-            / (
-                sum(rivets.Tension * (rivets.X - cg_yt) ** 2)
-                - sum(rivets.Tension * (rivets.Y - cg_zt) ** 2)
-            )
-        )
-        / 2
-    )
-    coord_yta = cg_yt * math.cos(alpha) + cg_zt * math.sin(alpha)
-    coord_zta = -cg_yt * math.sin(alpha) + cg_zt * math.cos(alpha)
-    coord_ya = rivets.X * math.cos(alpha) + rivets.Y * math.sin(alpha)
-    coord_za = -rivets.X * math.sin(alpha) + rivets.Y * math.cos(alpha)
-    moment_mysa = moment_mys * math.cos(alpha) + moment_mzs * math.sin(alpha)
-    moment_mzsa = -moment_mys * math.sin(alpha) + moment_mzs * math.cos(alpha)
-
-    force_fsy = forces[1] * rivets.Shear / sum(rivets.Shear) - moment_mxs * (
-        rivets.Shear * (rivets.Y - cg_zs)
-    ) / sum(rivets.Shear * ((rivets.X - cg_ys) ** 2 + (rivets.Y - cg_zs) ** 2))
-    force_fsz = forces[2] * rivets.Shear / sum(rivets.Shear) + moment_mxs * (
-        rivets.Shear * (rivets.X - cg_ys)
-    ) / sum(rivets.Shear * ((rivets.X - cg_ys) ** 2 + (rivets.Y - cg_zs) ** 2))
-    force_fs = np.sqrt(force_fsy**2 + force_fsz**2)
-
-    force_f1 = forces[0] * rivets.Tension / sum(rivets.Tension)
-    force_f2 = (
-        moment_mysa
-        * (rivets.Tension * (coord_za - coord_zta))
-        / sum(rivets.Tension * (coord_za - coord_zta) ** 2)
-    )
-    force_f3 = (
-        moment_mzsa
-        * (rivets.Tension * (coord_ya - coord_yta))
-        / sum(rivets.Tension * (coord_ya - coord_yta) ** 2)
-    )
-    force_ft = force_f1 + force_f2 - force_f3
-    shear_reserve_factor = np.trunc(100 * rivets.Shear / force_fs) / 100
-    tension_reserve_factor = np.trunc(100 * rivets.Tension / force_ft) / 100
-    # expanding the rivet input DF with results
-    res = rivets.copy()
-    res.insert(4, "Fsy", force_fsy)
-    res.insert(5, "Fsz", force_fsz)
-    res.insert(6, "Fs", force_fs)
-    res.insert(7, "Ft", force_ft)
-    res.insert(8, "RFs", shear_reserve_factor)
-    res.insert(9, "RFt", tension_reserve_factor)
-    res = res.astype({"Fsy": "int64", "Fsz": "int64", "Fs": "int64", "Ft": "int64"})
-    # creating a matrix with the CG information for further use in other functions
-    centers_of_gravity = [
-        application_point[1],
-        application_point[2],
-        cg_ys,
-        cg_zs,
-        cg_yt,
-        cg_zt,
-    ]
-    return res, centers_of_gravity

@@ -1,22 +1,23 @@
 from collections import namedtuple
-from re import X
 import pytest
 
 from math import isclose
-from src.pyelbe.hsb.hsb_21030_10 import (
-    moment_x_reference,
-    moment_x_reference_markdown,
-    moment_y_reference,
-    moment_y_reference_markdown,
-    moment_z_reference,
-    moment_z_reference_markdown,
-    moments_transformation,
+from pylantir.pyelbe.hsb.hsb_21030_10 import (
     ReferencePoint,
     Moments,
     Forces,
     Fastener,
     FastenerGroup,
     HSB_21030_01,
+)
+from pylantir.pyelbe.hsb.hsb_formulas import (
+    moment_x_reference_markdown,
+    moment_y_reference_markdown,
+    moment_z_reference_markdown,
+    moment_x_reference,
+    moment_y_reference,
+    moment_z_reference,
+    moments_transformation,
 )
 
 
@@ -365,7 +366,7 @@ def test_integration():
 
     # HSB_21030_01
     HSB_calc = HSB_21030_01(
-        id="HSB_21030_01",
+        name="HSB_21030_01",
         fastener_group=fastener_group,
         forces=forces,
         moments=moments,
@@ -375,7 +376,7 @@ def test_integration():
     # forces, moments, point_p, point_u
     # )
 
-    assert HSB_calc.id == "HSB_21030_01"
+    assert HSB_calc.name == "HSB_21030_01"
     # expected results:
     # HSB 21030-01 Issue D 1978 (page 7)
     # 4.3 Moments about point U
@@ -391,7 +392,6 @@ def test_integration():
     centroid_yt = -52.5
     centroid_zt = 25
 
-    
     # HSB 21030-01 Issue D 1978 (page 7)
     # 4.4 Moments about the centroid of the fastener group
     MxS = -45000  # Nmm (Shear)
@@ -401,7 +401,7 @@ def test_integration():
     assert HSB_calc.moment_x_s == MxS
     assert HSB_calc.moment_y_s == MyS
     assert HSB_calc.moment_z_s == MzS
-    
+
     # HSB 21030-01 Issue D 1978 (page 8)
     # 4.6 Forces of individual fasteners
     # NOTE: HSB values are rounded to 2 decimal places for kN
@@ -410,40 +410,40 @@ def test_integration():
     Fsy3 = 2580  # N
     Fsy4 = 2580  # N
 
-    assert isclose(HSB_calc.force_fsy[0], Fsy1,  abs_tol=10) 
-    assert isclose(HSB_calc.force_fsy[1], Fsy2,  abs_tol=10)
-    assert isclose(HSB_calc.force_fsy[2], Fsy3,  abs_tol=10)
-    assert isclose(HSB_calc.force_fsy[3], Fsy4,  abs_tol=10)
+    assert isclose(HSB_calc.force_fsy[0], Fsy1, abs_tol=10)
+    assert isclose(HSB_calc.force_fsy[1], Fsy2, abs_tol=10)
+    assert isclose(HSB_calc.force_fsy[2], Fsy3, abs_tol=10)
+    assert isclose(HSB_calc.force_fsy[3], Fsy4, abs_tol=10)
 
     Fsz1 = 230  # N
     Fsz2 = -1020  # N
     Fsz3 = -1020  # N
     Fsz4 = -190  # N
 
-    assert isclose(HSB_calc.force_fsz[0], Fsz1,  abs_tol=10)
-    assert isclose(HSB_calc.force_fsz[1], Fsz2,  abs_tol=10)
-    assert isclose(HSB_calc.force_fsz[2], Fsz3,  abs_tol=10)
-    assert isclose(HSB_calc.force_fsz[3], Fsz4,  abs_tol=10)
-    
+    assert isclose(HSB_calc.force_fsz[0], Fsz1, abs_tol=10)
+    assert isclose(HSB_calc.force_fsz[1], Fsz2, abs_tol=10)
+    assert isclose(HSB_calc.force_fsz[2], Fsz3, abs_tol=10)
+    assert isclose(HSB_calc.force_fsz[3], Fsz4, abs_tol=10)
+
     Fs1 = 3430  # N
     Fs2 = 3570  # N
     Fs3 = 2780  # N
     Fs4 = 2590  # N
 
-    assert isclose(HSB_calc.shear_forces[0], Fs1,  abs_tol=10)
-    assert isclose(HSB_calc.shear_forces[1], Fs2,  abs_tol=10)
-    assert isclose(HSB_calc.shear_forces[2], Fs3,  abs_tol=10)
-    assert isclose(HSB_calc.shear_forces[3], Fs4,  abs_tol=10)
+    assert isclose(HSB_calc.shear_forces[0], Fs1, abs_tol=10)
+    assert isclose(HSB_calc.shear_forces[1], Fs2, abs_tol=10)
+    assert isclose(HSB_calc.shear_forces[2], Fs3, abs_tol=10)
+    assert isclose(HSB_calc.shear_forces[3], Fs4, abs_tol=10)
 
     Ft1 = -1120  # N
     Ft2 = 6620  # N
     Ft3 = 4830  # N
     Ft4 = -330  # N
 
-    assert isclose(HSB_calc.tension_forces[0], Ft1,  abs_tol=10)
-    assert isclose(HSB_calc.tension_forces[1], Ft2,  abs_tol=10)
-    assert isclose(HSB_calc.tension_forces[2], Ft3,  abs_tol=10)
-    assert isclose(HSB_calc.tension_forces[3], Ft4,  abs_tol=10)
+    assert isclose(HSB_calc.tension_forces[0], Ft1, abs_tol=10)
+    assert isclose(HSB_calc.tension_forces[1], Ft2, abs_tol=10)
+    assert isclose(HSB_calc.tension_forces[2], Ft3, abs_tol=10)
+    assert isclose(HSB_calc.tension_forces[3], Ft4, abs_tol=10)
 
     # pyelbe centers of gravity
     # expected results:
@@ -455,7 +455,7 @@ def test_integration():
         centroid_ys,
         centroid_zs,
         centroid_yt,
-        centroid_zt
+        centroid_zt,
     )
 
     assert HSB_calc.cogs["application_point_x"] == centers_of_gravity[0]
@@ -465,4 +465,3 @@ def test_integration():
     assert HSB_calc.cogs["centroid_zs"] == centers_of_gravity[4]
     assert HSB_calc.cogs["centroid_yt"] == centers_of_gravity[5]
     assert HSB_calc.cogs["centroid_zt"] == centers_of_gravity[6]
-
