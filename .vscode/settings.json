@@ -14,5 +14,9 @@
     "connectionId": "http-localhost-9000-test",
     "projectKey": "test"
 },
-"editor.rulers": [100,120]
+"editor.rulers": [
+    100,
+    120
+],
+"python.linting.enabled": true
 }

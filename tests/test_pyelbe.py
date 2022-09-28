@@ -8,7 +8,7 @@ from pylantir.pyelbe.hsb.hsb_21030_10 import (
     Forces,
     Fastener,
     FastenerGroup,
-    HSB_21030_01,
+    Hsb2103001,
 )
 from pylantir.pyelbe.hsb.hsb_formulas import (
     moment_x_reference_markdown,
@@ -142,36 +142,6 @@ def test_moment_z_reference_markdown():
     assert type(md_f) == str
 
 
-# def test_moments_transformation():
-#    """Test moments_transformation"""#
-#
-#
-
-#    reference_point = namedtuple("reference_point", "x_coord y_coord z_coord")
-#    reference_point = reference_point(0, 0, 0)#
-
-#    # test 1: call function with all 0 values, test type and value
-#    assert moments_transformation(
-#        moments_p, forces_p, application_point, reference_point
-#    ) == (10, 10, 10)#
-
-#    # test 2: call function with only unit values for moments and forces, test type and value
-#    moments_p = namedtuple("moments_p", "moment_x moment_y moment_z")
-#    moments_p = moments_p(1, 1, 1)#
-
-#    forces_p = namedtuple("forces_p", "force_x force_y force_z")
-#    forces_p = forces_p(1, 1, 1)#
-
-#    application_point = namedtuple("application_point", "x_coord y_coord z_coord")
-#    application_point = application_point(1, 1, 1)#
-
-#    reference_point = namedtuple("reference_point", "x_coord y_coord z_coord")
-#    reference_point = reference_point(0, 0, 0)#
-
-#    assert moments_transformation(
-#        moments_p, forces_p, application_point, reference_point
-#    ) == (1, 1, 1)
-
 # test for fastener class
 def test_fastener():
     """Test fastener class"""
@@ -256,11 +226,12 @@ def test_fastener_group():
     )
 
     # expected results for fastener group:
-    X = [0, 0, 0, 0]
-    Y = [-70, -40, -40, -60]
-    Z = [35, 35, 15, 15]
-    Shear = [18500, 18500, 18500, 18500]
-    Tension = [12000, 12000, 12000, 12000]
+    x_array = [0, 0, 0, 0]
+    y_array = [-70, -40, -40, -60]
+    #Z = [35, 35, 15, 15] not used?
+
+    shear = [18500, 18500, 18500, 18500]
+    tension = [12000, 12000, 12000, 12000]
     # HSB 21030-01 Issue D 1978 (page 7) 4.4
     centroid_ys = -52.5
     centroid_zs = 25
@@ -278,10 +249,10 @@ def test_fastener_group():
         fastener_3,
         fastener_4,
     ]
-    assert (fastener_group.X == X).all()
-    assert (fastener_group.Y == Y).all()
-    assert (fastener_group.shear == Shear).all()
-    assert (fastener_group.tension == Tension).all()
+    assert (fastener_group.x_array == x_array).all()
+    assert (fastener_group.y_array == y_array).all()
+    assert (fastener_group.shear == shear).all()
+    assert (fastener_group.tension == tension).all()
     assert fastener_group.centroid_ys == centroid_ys
     assert fastener_group.centroid_zs == centroid_zs
     assert fastener_group.centroid_yt == centroid_yt
@@ -364,9 +335,9 @@ def test_integration():
         name="test", fasteners=[fastener_1, fastener_2, fastener_3, fastener_4]
     )
 
-    # HSB_21030_01
-    HSB_calc = HSB_21030_01(
-        name="HSB_21030_01",
+    # Hsb2103001
+    hsb_calc = Hsb2103001(
+        name="Hsb2103001",
         fastener_group=fastener_group,
         forces=forces,
         moments=moments,
@@ -376,15 +347,15 @@ def test_integration():
     # forces, moments, point_p, point_u
     # )
 
-    assert HSB_calc.name == "HSB_21030_01"
+    assert hsb_calc.name == "Hsb2103001"
     # expected results:
     # HSB 21030-01 Issue D 1978 (page 7)
     # 4.3 Moments about point U
-    MxU = -240000  # Nmm
-    MyU = 260000  # Nmm
-    MzU = 360000  # Nmm
+    mxu = -240000  # Nmm
+    myu = 260000  # Nmm
+    mzu = 360000  # Nmm
 
-    assert HSB_calc.moments_u == (MxU, MyU, MzU)
+    assert hsb_calc.moments_u == (mxu, myu, mzu)
 
     # HSB 21030-01 Issue D 1978 (page 7) 4.4
     centroid_ys = -52.5
@@ -394,56 +365,56 @@ def test_integration():
 
     # HSB 21030-01 Issue D 1978 (page 7)
     # 4.4 Moments about the centroid of the fastener group
-    MxS = -45000  # Nmm (Shear)
-    MyS = 10000  # Nmm (Tension)
-    MzS = -165000  # Nmm (Tension)
+    mxs = -45000  # Nmm (shear)
+    mys = 10000  # Nmm (tension)
+    mzs = -165000  # Nmm (tension)
 
-    assert HSB_calc.moment_x_s == MxS
-    assert HSB_calc.moment_y_s == MyS
-    assert HSB_calc.moment_z_s == MzS
+    assert hsb_calc.moment_x_s == mxs
+    assert hsb_calc.moment_y_s == mys
+    assert hsb_calc.moment_z_s == mzs
 
     # HSB 21030-01 Issue D 1978 (page 8)
     # 4.6 Forces of individual fasteners
     # NOTE: HSB values are rounded to 2 decimal places for kN
-    Fsy1 = 3420  # N
-    Fsy2 = 3420  # N
-    Fsy3 = 2580  # N
-    Fsy4 = 2580  # N
+    fsy1 = 3420  # N
+    fsy2 = 3420  # N
+    fsy3 = 2580  # N
+    fsy4 = 2580  # N
 
-    assert isclose(HSB_calc.force_fsy[0], Fsy1, abs_tol=10)
-    assert isclose(HSB_calc.force_fsy[1], Fsy2, abs_tol=10)
-    assert isclose(HSB_calc.force_fsy[2], Fsy3, abs_tol=10)
-    assert isclose(HSB_calc.force_fsy[3], Fsy4, abs_tol=10)
+    assert isclose(hsb_calc.force_fsy[0], fsy1, abs_tol=10)
+    assert isclose(hsb_calc.force_fsy[1], fsy2, abs_tol=10)
+    assert isclose(hsb_calc.force_fsy[2], fsy3, abs_tol=10)
+    assert isclose(hsb_calc.force_fsy[3], fsy4, abs_tol=10)
 
-    Fsz1 = 230  # N
-    Fsz2 = -1020  # N
-    Fsz3 = -1020  # N
-    Fsz4 = -190  # N
+    fsz1 = 230  # N
+    fsz2 = -1020  # N
+    fsz3 = -1020  # N
+    fsz4 = -190  # N
 
-    assert isclose(HSB_calc.force_fsz[0], Fsz1, abs_tol=10)
-    assert isclose(HSB_calc.force_fsz[1], Fsz2, abs_tol=10)
-    assert isclose(HSB_calc.force_fsz[2], Fsz3, abs_tol=10)
-    assert isclose(HSB_calc.force_fsz[3], Fsz4, abs_tol=10)
+    assert isclose(hsb_calc.force_fsz[0], fsz1, abs_tol=10)
+    assert isclose(hsb_calc.force_fsz[1], fsz2, abs_tol=10)
+    assert isclose(hsb_calc.force_fsz[2], fsz3, abs_tol=10)
+    assert isclose(hsb_calc.force_fsz[3], fsz4, abs_tol=10)
 
-    Fs1 = 3430  # N
-    Fs2 = 3570  # N
-    Fs3 = 2780  # N
-    Fs4 = 2590  # N
+    fs1 = 3430  # n
+    fs2 = 3570  # n
+    fs3 = 2780  # n
+    fs4 = 2590  # n
 
-    assert isclose(HSB_calc.shear_forces[0], Fs1, abs_tol=10)
-    assert isclose(HSB_calc.shear_forces[1], Fs2, abs_tol=10)
-    assert isclose(HSB_calc.shear_forces[2], Fs3, abs_tol=10)
-    assert isclose(HSB_calc.shear_forces[3], Fs4, abs_tol=10)
+    assert isclose(hsb_calc.shear_forces[0], fs1, abs_tol=10)
+    assert isclose(hsb_calc.shear_forces[1], fs2, abs_tol=10)
+    assert isclose(hsb_calc.shear_forces[2], fs3, abs_tol=10)
+    assert isclose(hsb_calc.shear_forces[3], fs4, abs_tol=10)
 
-    Ft1 = -1120  # N
-    Ft2 = 6620  # N
-    Ft3 = 4830  # N
-    Ft4 = -330  # N
+    ft1 = -1120  # n
+    ft2 = 6620  # n
+    ft3 = 4830  # n
+    ft4 = -330  # n
 
-    assert isclose(HSB_calc.tension_forces[0], Ft1, abs_tol=10)
-    assert isclose(HSB_calc.tension_forces[1], Ft2, abs_tol=10)
-    assert isclose(HSB_calc.tension_forces[2], Ft3, abs_tol=10)
-    assert isclose(HSB_calc.tension_forces[3], Ft4, abs_tol=10)
+    assert isclose(hsb_calc.tension_forces[0], ft1, abs_tol=10)
+    assert isclose(hsb_calc.tension_forces[1], ft2, abs_tol=10)
+    assert isclose(hsb_calc.tension_forces[2], ft3, abs_tol=10)
+    assert isclose(hsb_calc.tension_forces[3], ft4, abs_tol=10)
 
     # pyelbe centers of gravity
     # expected results:
@@ -458,10 +429,10 @@ def test_integration():
         centroid_zt,
     )
 
-    assert HSB_calc.cogs["application_point_x"] == centers_of_gravity[0]
-    assert HSB_calc.cogs["application_point_y"] == centers_of_gravity[1]
-    assert HSB_calc.cogs["application_point_z"] == centers_of_gravity[2]
-    assert HSB_calc.cogs["centroid_ys"] == centers_of_gravity[3]
-    assert HSB_calc.cogs["centroid_zs"] == centers_of_gravity[4]
-    assert HSB_calc.cogs["centroid_yt"] == centers_of_gravity[5]
-    assert HSB_calc.cogs["centroid_zt"] == centers_of_gravity[6]
+    assert hsb_calc.cogs["application_point_x"] == centers_of_gravity[0]
+    assert hsb_calc.cogs["application_point_y"] == centers_of_gravity[1]
+    assert hsb_calc.cogs["application_point_z"] == centers_of_gravity[2]
+    assert hsb_calc.cogs["centroid_ys"] == centers_of_gravity[3]
+    assert hsb_calc.cogs["centroid_zs"] == centers_of_gravity[4]
+    assert hsb_calc.cogs["centroid_yt"] == centers_of_gravity[5]
+    assert hsb_calc.cogs["centroid_zt"] == centers_of_gravity[6]

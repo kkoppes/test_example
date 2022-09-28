@@ -4,6 +4,8 @@ import os
 import sys
 from setuptools import setup, find_packages
 
+URL = 'git.de.pa.corp:8443/projects/ENG/repos/pylantir/browse'
+
 # Get the long description from the README file
 with open(os.path.join(os.path.dirname(__file__), 'README.md')) as f:
     long_description = f.read()
@@ -27,7 +29,7 @@ setup(
     description='Python package for KI Engineering',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='git.de.pa.corp:8443/projects/ENG/repos/pylantir/browse',
+    url=URL,
     author='Kristiaan Koppes',
     author_email='kristiaan.koppes@airbus.com',
     license='Internal',
@@ -43,8 +45,8 @@ setup(
     install_requires=requirements,
     python_requires='>=3.10',
     project_urls={
-        'Bug Reports': 'git.de.pa.corp:8443/projects/ENG/repos/pylantir/browse',
-        'Source': 'git.de.pa.corp:8443/projects/ENG/repos/pylantir/browse',
+        'Bug Reports': URL,
+        'Source': URL,
     },
 )
 

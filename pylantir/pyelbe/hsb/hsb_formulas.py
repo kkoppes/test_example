@@ -1,3 +1,4 @@
+"""supporting functions for the HSB methods"""
 from collections import namedtuple
 import numpy as np
 import math
@@ -263,15 +264,19 @@ def moment_z_reference_markdown(
     )
     # for LaTeX
     # pylint: disable=anomalous-backslash-in-string
-    markdown_formula = """$$
+    markdown_formula = r"""$$
     M_{zU} = M_{zP} - F_{x}\cdot (y_{P} - y_{U}) + F_{y}\cdot (x_{P} - x_{U})
     $$
 
     """
     markdown_filled = (
         f"$${moment_z_ref} = "
-        f"{moment_z_p} - {force_x} \cdot ({y_coord_p} - {y_coord_u}) + "
-        f"{force_y} \cdot ({x_coord_p} - {x_coord_u})$$"
+        f"{moment_z_p} - {force_x} "
+        r"\cdot"
+        f" ({y_coord_p} - {y_coord_u}) + "
+        f"{force_y} "
+        r"\cdot"
+        f" ({x_coord_p} - {x_coord_u})$$"
     )
     # pylint: enable=anomalous-backslash-in-string
     return markdown_formula, markdown_filled
@@ -337,10 +342,13 @@ def moments_transformation(
 
 
 
-def absmaxND(a, axis=None):
-    amax = a.max(axis)
-    amin = a.min(axis)
-    return np.where(-amin > amax, amin, amax)
+#def AbsMaxND(a, axis=None):
+#    """
+#    Return the absolute maximum of an array along a given axis.
+#    """
+#    amax = a.max(axis)
+#    amin = a.min(axis)
+#    return np.where(-amin > amax, amin, amax)
 
 
 

@@ -215,8 +215,8 @@ class FastenerGroup:
     name: str
     fasteners: list
     fastener_names: list = field(init=False)
-    X: array = field(init=False)
-    Y: array = field(init=False)
+    x_array: array = field(init=False)
+    y_array: array = field(init=False)
     # TODO: add Z?
     shear: array = field(init=False)
     tension: array = field(init=False)
@@ -240,9 +240,9 @@ class FastenerGroup:
         # fastener names
         self.fastener_names = [fastener.name for fastener in self.fasteners]
         # X array from fasteners
-        self.X = np.array([fastener.x_coord for fastener in self.fasteners])
+        self.x_array = np.array([fastener.x_coord for fastener in self.fasteners])
         # Y array from fasteners
-        self.Y = np.array([fastener.y_coord for fastener in self.fasteners])
+        self.y_array = np.array([fastener.y_coord for fastener in self.fasteners])
         # shear array from fasteners
         self.shear = np.array([fastener.shear_allowable for fastener in self.fasteners])
         # tension array from fasteners
@@ -265,7 +265,8 @@ class FastenerGroup:
     def calculate_centroid_ys(self) -> namedtuple:
         r"""
         Calculates centroid of fastener group in y direction
-        y_{S} = \frac{\sum (F_{s,all,i}\cdot y_{i})}{\sum F_{s,all,i}}
+
+        :math:`y_{S} = \frac{\sum (F_{s,all,i}\cdot y_{i})}{\sum F_{s,all,i}}`
         """
 
         centroid_ys = sum(
@@ -276,7 +277,8 @@ class FastenerGroup:
     def calculate_centroid_zs(self) -> namedtuple:
         r"""
         Calculates centroid of fastener group in z direction
-        z_{S} = \frac{\sum (F_{s,all,i}\cdot z_{i})}{\sum F_{s,all,i}}
+
+        :math:`z_{S} = \frac{\sum (F_{s,all,i}\cdot z_{i})}{\sum F_{s,all,i}}`
         """
         centroid_zs = sum(
             [fastener.z_coord * fastener.shear_allowable for fastener in self.fasteners]
@@ -285,9 +287,12 @@ class FastenerGroup:
 
     def calculate_centroid_yt(self) -> namedtuple:
         r"""
-        Calculates centroid of fastener group in y direction, TODO: scaled by E
-        y_{T} = \frac{\sum (F_{t,all,i}\cdot y_{i})}{\sum F_{t,all,i}}
+        Calculates centroid of fastener group in y direction,
+
+        :math:`y_{T} = \frac{\sum (F_{t,all,i}\cdot y_{i})}{\sum F_{t,all,i}}`
         """
+        #TODO: scaled by E
+
         centroid_yt = sum(
             [
                 fastener.y_coord * fastener.tension_allowable
@@ -298,9 +303,11 @@ class FastenerGroup:
 
     def calculate_centroid_zt(self) -> namedtuple:
         r"""
-        Calculates centroid of fastener group in z direction, TODO: scaled by E
-        z_{T} = \frac{\sum (F_{t,all,i}\cdot z_{i})}{\sum F_{t,all,i}}
+        Calculates centroid of fastener group in z direction,
+
+        :math:`z_{T} = \frac{\sum (F_{t,all,i}\cdot z_{i})}{\sum F_{t,all,i}}`
         """
+        #TODO: scaled by E
         centroid_zt = sum(
             [
                 fastener.z_coord * fastener.tension_allowable
@@ -362,7 +369,7 @@ class FastenerGroup:
 
         #TODO: move dummy fastener here
 
-class HSB_21030_01:
+class Hsb2103001:
     """
 
     Internal load distribution of fastener groups 21030-01 Issue D Year 1989
@@ -413,8 +420,6 @@ class HSB_21030_01:
         # reference point 2D yz plane
         # moment translation on plane to centroid for tension
 
-        # self.moments_s = calculate_ms()
-
         self.moment_x_s = moment_x_reference(
             moment_x_p=self.moments_u.moment_x_u,
             force_y=self.forces.force_y,
@@ -425,7 +430,6 @@ class HSB_21030_01:
             y_coord_u=self.fastener_group.centroid_ys,
         )
 
-        # moment_mys = moment_myu - forces[0] * cg_zt
         self.moment_y_s = moment_y_reference(
             moment_y_p=self.moments_u.moment_y_u,
             force_x=self.forces.force_x,
@@ -435,7 +439,7 @@ class HSB_21030_01:
             x_coord_u=0,
             z_coord_u=self.fastener_group.centroid_zt,
         )
-        # moment_mzs = moment_mzu + forces[0] * cg_yt
+
         self.moment_z_s = moment_z_reference(
             moment_z_p=self.moments_u.moment_z_u,
             force_x=self.forces.force_x,
@@ -480,7 +484,7 @@ class HSB_21030_01:
 
         # if any fasteners are in compression, recalcultate with fastener tension allowable 0
         # update fastener tension allowable
-        if [item for item in self.fastener_tension if item[1] == False]:
+        if [item for item in self.fastener_tension if not item[1]]:
             self.compression_update = True
             print("Fasteners in compression, iterate calculation!")
 
@@ -492,8 +496,16 @@ class HSB_21030_01:
         # self.fastener_group.update_fasteners_tension_allowable(self.fastener_tension)
 
     def calculate_alpha(self) -> float:
-        """
+        r"""
         Calculates the angle alpha
+        3.3.3 Tensile forces in the fasteners
+        To balance the forces it is necessary to transform the applied loading into the principal
+        axis system of the fastener group.
+
+        :math:`tan(2 \cdot \alpha) = 2 \cdot \frac{\sum[F_{T,all,i} \cdot (y_{i} -
+         y_{T}) \cdot (z_{i} - z_{T})]}
+        {\sum[F_{T,all,i} \cdot (y_{i} - y_{T})^{2}] - \sum[F_{T,all,i} \cdot (z_{i} - z_{T})^{2}]}`
+
         """
         alpha = (
             math.atan(
@@ -582,10 +594,10 @@ class HSB_21030_01:
     def calculate_fastener_tension_force_f1(self) -> float:
         r"""
         3.3.3 Tensile forces in the fasteners
-        To balance the forces it is necessary to transform the applied loading into the principal 
+        To balance the forces it is necessary to transform the applied loading into the principal
         axis system of the fastener group
 
-        F_{1,i} = F_{x}\cdot \frac{F_{t,all,i}}{\sum F_{t,all,i}}
+        :math:`F_{1,i} = F_{x}\cdot \frac{F_{t,all,i}}{\sum F_{t,all,i}}`
         """
 
         force_f1 = (
@@ -616,9 +628,9 @@ class HSB_21030_01:
     def calculate_fastener_tension_force(self) -> List[float]:
         """
         3.3.3 Tensile forces in the fasteners
-        To balance the forces it is necessary to transform the applied loading into the principal 
+        To balance the forces it is necessary to transform the applied loading into the principal
         axis system of the fastener group
-        
+
         :param self.force_f1: force 1
         :param self.force_f2: force 2
         :param self.force_f3: force 3
@@ -685,27 +697,34 @@ class HSB_21030_01:
         return force_fsy
 
     def calculate_fastener_shear_forces(self) -> List[float]:
-        # force_fsy = self.calculate_fsy()
-
-        # force_fsz = self.calculate_fsz()
+        """
+        3.3.4 Shear forces in the fasteners
+        :param self.force_fsz: force in z-direction
+        :param self.force_fsy: force in y-direction
+        :return: shear forces
+        """
 
         force_fs = np.sqrt(self.force_fsy**2 + self.force_fsz**2)
 
         return force_fs
 
-    # shear_reserve_factor = np.trunc(100 * rivets.Shear / force_fs) / 100
     def calculate_fastener_shear_reserve_factor(self) -> float:
+        """
+        :math: `RF = F_{s,all,i}/F_{s,i}`
+        """
         return np.trunc(100 * self.fastener_group.shear / self.shear_forces) / 100
 
-    # tension_reserve_factor = np.trunc(100 * rivets.Tension / force_ft) / 100
     def calculate_fastener_tension_reserve_factor(self) -> float:
+        """
+        :math: `RF = F_{t,all,i}/F_{t,i}`
+        """
         return np.trunc(100 * self.fastener_group.tension / self.tension_forces) / 100
 
     def make_dataframe(self):
         """make dataframe including fasteners, attributes, forces and reserve factors"""
         df = {
-            "X": self.fastener_group.X,
-            "Y": self.fastener_group.Y,
+            "X": self.fastener_group.x_array,
+            "Y": self.fastener_group.y_array,
             "Shear": self.fastener_group.shear,
             "Tension": self.fastener_group.tension,
             "Fsyi": self.force_fsy,
@@ -760,14 +779,14 @@ def create_dummmy_fastener(dummy_fast):
     return dummy_fastener
 
 
-def iterate_calc(HSB21030_calc):
+def iterate_calc(hsb21030_calc):
     # check if fasteners are in tension
     # if not, update tension allowable with 0
     # create new fastener_group
-    fasteners = HSB21030_calc.fastener_group.fasteners
+    fasteners = hsb21030_calc.fastener_group.fasteners
     fastener_iter = []
     dummy_fast = []
-    for i, tension in enumerate(HSB21030_calc.fastener_tension):
+    for i, tension in enumerate(hsb21030_calc.fastener_tension):
         if tension[1] == False:
             dummy_fast_tmp = fasteners[i].copy()
             dummy_fast.append(dummy_fast_tmp)
@@ -781,16 +800,16 @@ def iterate_calc(HSB21030_calc):
     dummy_fastener = create_dummmy_fastener(dummy_fast)
     fastener_iter += [dummy_fastener]
     fastener_group_iter = FastenerGroup(
-        f"{HSB21030_calc.fastener_group.name}_iter", fastener_iter
+        f"{hsb21030_calc.fastener_group.name}_iter", fastener_iter
     )
 
-    iteration = HSB_calc = HSB_21030_01(
-        name=f"{HSB21030_calc.name}_interation",
+    iteration = Hsb2103001(
+        name=f"{hsb21030_calc.name}_interation",
         fastener_group=fastener_group_iter,
-        forces=HSB21030_calc.forces,
-        moments=HSB21030_calc.moments,
-        application_point=HSB21030_calc.application_point,
-        reference_point=HSB21030_calc.reference_point,
+        forces=hsb21030_calc.forces,
+        moments=hsb21030_calc.moments,
+        application_point=hsb21030_calc.application_point,
+        reference_point=hsb21030_calc.reference_point,
     )
 
     return iteration

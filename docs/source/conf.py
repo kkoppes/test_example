@@ -14,6 +14,12 @@ import sys
 sys.path.insert(0, os.path.abspath('../..'))
 
 
+
+# --------------------------------------------------------------------------- #
+# ------------------------------  General  ---------------------------------- #
+
+doc_name = 'pylantir Documentation'
+
 # -- Project information -----------------------------------------------------
 
 project = 'pylantir'
@@ -128,7 +134,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'pylantir.tex', 'pylantir Documentation',
+    (master_doc, 'pylantir.tex', doc_name,
      'Kristiaan Koppes, Gianluca Molinari, Patrick O\'Brien', 'manual'),
 ]
 
@@ -138,7 +144,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'pylantir', 'pylantir Documentation',
+    (master_doc, 'pylantir', doc_name,
      [author], 1)
 ]
 
@@ -149,7 +155,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'pylantir', 'pylantir Documentation',
+    (master_doc, 'pylantir', doc_name,
      author, 'pylantir', 'One line description of project.',
      'Miscellaneous'),
 ]
