@@ -1,10 +1,10 @@
 """supporting functions for the HSB methods"""
 from collections import namedtuple
-import numpy as np
 import math
+import numpy as np
 
 
-def moment_x_reference(
+def moment_x_reference(  # pylint: disable=too-many-arguments
     moment_x_p: float,
     force_y: float,
     force_z: float,
@@ -13,10 +13,12 @@ def moment_x_reference(
     z_coord_u: float = 0,
     y_coord_u: float = 0,
 ) -> float:
-    """
+    r"""
     Calculates the moment of the force about the point of application in the x direction.
     NOTE: Changed slightly from the HSB to insert absolute coordinates for both applied and
     reference points
+
+    :math:`M_{xU} = M_{xP} - F_{y}\cdot (z_{P} - z_{U}) + F_{z}\cdot (y_{P} - y_{U})`
 
     :param moment_x_p: moment of the force about the point of application in the x direction
     :type moment_x_p: float
@@ -94,6 +96,7 @@ def moment_x_reference_markdown(
     # pylint: enable=anomalous-backslash-in-string
     return (markdown_formula, markdown_filled)
 
+
 # pylint: disable=too-many-arguments
 def moment_y_reference(
     moment_y_p: float,
@@ -104,8 +107,10 @@ def moment_y_reference(
     x_coord_u: float = 0,
     z_coord_u: float = 0,
 ) -> float:
-    """
+    r"""
     Calculate moment_y_reference
+
+    :math:`M_{yU} = M_{yP} + F_{x}\cdot (z_{P} - z_{U}) - F_{z}\cdot (x_{P} - x_{U})`
 
     :param moment_y_p: moment of the force about the point of application in the y direction
     :type moment_y_p: float
@@ -132,6 +137,7 @@ def moment_y_reference(
         - force_z * (x_coord_p - x_coord_u)
     )
     return float(moment_y_ref)
+
 
 # pylint: disable=too-many-arguments
 def moment_y_reference_markdown(
@@ -185,6 +191,7 @@ def moment_y_reference_markdown(
     # pylint: enable=anomalous-backslash-in-string
     return markdown_formula, markdown_filled
 
+
 # pylint: disable=too-many-arguments
 def moment_z_reference(
     moment_z_p: float,
@@ -195,8 +202,10 @@ def moment_z_reference(
     x_coord_u: float = 0,
     y_coord_u: float = 0,
 ) -> float:
-    """
+    r"""
     Calculates the moment of the force about the point of application in the z direction.
+
+    :math: `M_{zU} = M_{zP} - F_{x}\cdot (y_{P} - y_{U}) + F_{y}\cdot (x_{P} - x_{U})`
 
     :param moment_z_p: moment of the force about the point of application in the z direction
     :type moment_z_p: float
@@ -235,7 +244,7 @@ def moment_z_reference_markdown(
     x_coord_u: float = 0,
     y_coord_u: float = 0,
 ) -> tuple:
-    """
+    r"""
     Create markdown in LaTeX for moment_z_reference
     NOTE: Changed slightly from the HSB to insert absolute coordinates for both applied and
     reference points
@@ -340,9 +349,7 @@ def moments_transformation(
 # TODO: moments_transformation implemented with numpy array for speed and general use
 
 
-
-
-#def AbsMaxND(a, axis=None):
+# def AbsMaxND(a, axis=None):
 #    """
 #    Return the absolute maximum of an array along a given axis.
 #    """
@@ -351,9 +358,9 @@ def moments_transformation(
 #    return np.where(-amin > amax, amin, amax)
 
 
-
-
-def riv_field(forces, moments, application_point, rivets):
+def riv_field(
+    forces, moments, application_point, rivets
+):  # pylint: disable=too-many-locals
     """
     Rivet field calculation as given in HSB 21030-01
 

@@ -8,13 +8,12 @@ import math
 from typing import List
 import numpy as np
 import pandas as pd
-from .hsb_formulas import (moment_x_reference,
-moment_x_reference_markdown,
-moment_y_reference,
-moment_y_reference_markdown,
-moment_z_reference,
-moment_z_reference_markdown,
-moments_transformation)
+from .hsb_formulas import (
+    moment_x_reference,
+    moment_y_reference,
+    moment_z_reference,
+    moments_transformation,
+)
 
 
 @dataclass
@@ -137,8 +136,8 @@ class Moments:
         )
 
 
-#TODO: make coordinates into tuple
-#pylint: disable=too-many-instance-attributes
+# TODO: make coordinates into tuple
+# pylint: disable=too-many-instance-attributes
 @dataclass
 class Fastener:
     """
@@ -173,11 +172,17 @@ class Fastener:
     material: str = "mymaterial"
 
     # TODO: add material to fastener (from material database)
+    # TODO: make dummy fastener here
     def copy(self):
         """
         Copy fastener
         """
         return copy.deepcopy(self)
+
+
+# TODO: make Fastenergroup from pd.DataFrame
+# Class joint with fasteners
+# combination fastener / plates
 
 
 @dataclass
@@ -191,10 +196,10 @@ class FastenerGroup:
     :type fasteners: list
     :param fastener_names: list of fastener names in the fastener group
     :type fastener_names: list
-    :param X: x coordinates of the fasteners in the fastener group
-    :type X: list
-    :param Y: y coordinates of the fasteners in the fastener group
-    :type Y: list
+    :param x_array: x coordinates of the fasteners in the fastener group
+    :type x_array: list
+    :param y_array: y coordinates of the fasteners in the fastener group
+    :type y_array: list
     :param shear: shear allowables of the fasteners in the fastener group
     :type shear: list
     :param tension: tension allowables of the fasteners in the fastener group
@@ -291,7 +296,7 @@ class FastenerGroup:
 
         :math:`y_{T} = \frac{\sum (F_{t,all,i}\cdot y_{i})}{\sum F_{t,all,i}}`
         """
-        #TODO: scaled by E
+        # TODO: scaled by E
 
         centroid_yt = sum(
             [
@@ -307,7 +312,7 @@ class FastenerGroup:
 
         :math:`z_{T} = \frac{\sum (F_{t,all,i}\cdot z_{i})}{\sum F_{t,all,i}}`
         """
-        #TODO: scaled by E
+        # TODO: scaled by E
         centroid_zt = sum(
             [
                 fastener.z_coord * fastener.tension_allowable
@@ -367,11 +372,9 @@ class FastenerGroup:
 
         return dataframe
 
-        #TODO: move dummy fastener here
 
-class Hsb2103001:
+class Hsb2103001:  # pylint: disable=too-many-public-methods
     """
-
     Internal load distribution of fastener groups 21030-01 Issue D Year 1989
 
     Summary
@@ -388,7 +391,8 @@ class Hsb2103001:
     Class for HSB 21030-01 fastener calculation
     """
 
-    def __init__(
+    # TODO: add iteration trigger variable to take out dummy fastener from results
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         name: str,
         fastener_group: FastenerGroup,
@@ -420,35 +424,11 @@ class Hsb2103001:
         # reference point 2D yz plane
         # moment translation on plane to centroid for tension
 
-        self.moment_x_s = moment_x_reference(
-            moment_x_p=self.moments_u.moment_x_u,
-            force_y=self.forces.force_y,
-            force_z=self.forces.force_z,
-            z_coord_p=self.reference_point.z_coord,
-            y_coord_p=self.reference_point.y_coord,
-            z_coord_u=self.fastener_group.centroid_zs,
-            y_coord_u=self.fastener_group.centroid_ys,
-        )
+        self.moment_x_s = self.calculate_mxs()
 
-        self.moment_y_s = moment_y_reference(
-            moment_y_p=self.moments_u.moment_y_u,
-            force_x=self.forces.force_x,
-            force_z=0,
-            x_coord_p=0,
-            z_coord_p=0,
-            x_coord_u=0,
-            z_coord_u=self.fastener_group.centroid_zt,
-        )
+        self.moment_y_s = self.calculate_mys()
 
-        self.moment_z_s = moment_z_reference(
-            moment_z_p=self.moments_u.moment_z_u,
-            force_x=self.forces.force_x,
-            force_y=0,
-            x_coord_p=0,
-            y_coord_p=0,
-            x_coord_u=0,
-            y_coord_u=self.fastener_group.centroid_yt,
-        )
+        self.moment_z_s = self.calculate_mzs()
 
         # calculate alpha
         self.alpha = self.calculate_alpha()
@@ -488,12 +468,62 @@ class Hsb2103001:
             self.compression_update = True
             print("Fasteners in compression, iterate calculation!")
 
-        self.dataframe = self.make_dataframe()
+        self.result_dict = self.make_dict()
 
         self.cogs = self.make_cogs()
 
         # update fastener group with 0 tension allowable for fasteners under compression
         # self.fastener_group.update_fasteners_tension_allowable(self.fastener_tension)
+
+    def calculate_mxs(self):
+        r"""
+        Calculate moment around centroid
+
+        :math: `M_{xS} = M_{xU} + F_{y} \cdot z_{s} - F_{z} \cdot y_{s}`
+        """
+        # moment translation on plane to centroid for tension
+        moment_x_s = moment_x_reference(
+            moment_x_p=self.moments_u.moment_x_u,
+            force_y=self.forces.force_y,
+            force_z=self.forces.force_z,
+            z_coord_p=self.reference_point.z_coord,
+            y_coord_p=self.reference_point.y_coord,
+            z_coord_u=self.fastener_group.centroid_zs,
+            y_coord_u=self.fastener_group.centroid_ys,
+        )
+        return moment_x_s
+
+    def calculate_mys(self):
+        r"""
+
+        :math: `M_{yS} = M_{yU} - F_{x} \cdot z_{T}`
+        """
+        moment_m_y_s = moment_y_reference(
+            moment_y_p=self.moments_u.moment_y_u,
+            force_x=self.forces.force_x,
+            force_z=0,
+            x_coord_p=0,
+            z_coord_p=0,
+            x_coord_u=0,
+            z_coord_u=self.fastener_group.centroid_zt,
+        )
+        return moment_m_y_s
+
+    def calculate_mzs(self):
+        r"""
+
+        :math: `M_{zS} = M_{zU} + F_{x} \cdot y_{T}`
+        """
+        moment_m_z_s = moment_z_reference(
+            moment_z_p=self.moments_u.moment_z_u,
+            force_x=self.forces.force_x,
+            force_y=0,
+            x_coord_p=0,
+            y_coord_p=0,
+            x_coord_u=0,
+            y_coord_u=self.fastener_group.centroid_yt,
+        )
+        return moment_m_z_s
 
     def calculate_alpha(self) -> float:
         r"""
@@ -540,24 +570,30 @@ class Hsb2103001:
         return alpha
 
     def calculate_centroid_yta(self) -> float:
-        """
+        r"""
         Calculates the transformed y-coordinate of the centroid
+
+        :math:`y_{T,a} = y_{T} * cos(\alpha) - z_{T} * sin(\alpha)`
         """
         return self.fastener_group.centroid_yt * math.cos(
             self.alpha
         ) + self.fastener_group.centroid_zt * math.sin(self.alpha)
 
     def calculate_centroid_zta(self) -> float:
-        """
+        r"""
         Calculates the transformed z-coordinate of the centroid
+
+        :math:`z_{T,a} =  - y_{T} * sin(\alpha) + z_{T} * cos(\alpha)`
         """
         return -self.fastener_group.centroid_yt * math.sin(
             self.alpha
         ) + self.fastener_group.centroid_zt * math.cos(self.alpha)
 
     def calculate_fastener_ya(self) -> List[float]:
-        """
+        r"""
         Calculates the transformed y-coordinate of the fasteners
+
+        :math:`y_{a,i} = y_{i} * cos(\alpha) - z_{i} * sin(\alpha)`
         """
         return [
             fastener.y_coord * math.cos(self.alpha)
@@ -566,8 +602,10 @@ class Hsb2103001:
         ]
 
     def calculate_fastener_za(self) -> List[float]:
-        """
+        r"""
         Calculates the transformed z-coordinate of the fasteners
+
+        :math:`z_{a,i} =  - y_{i} * sin(\alpha) + z_{i} * cos(\alpha)`
         """
         return [
             -fastener.y_coord * math.sin(self.alpha)
@@ -576,16 +614,20 @@ class Hsb2103001:
         ]
 
     def calculate_moment_ya(self) -> List[float]:
-        """
+        r"""
         Calculates the transformed moments in y-direction
+
+        :math:`M_{ySA} = M_{yS} * cos(\alpha) - M_{zS} * sin(\alpha)`
         """
         return self.moment_y_s * math.cos(self.alpha) + self.moment_z_s * math.sin(
             self.alpha
         )
 
     def calculate_moment_za(self) -> List[float]:
-        """
+        r"""
         Calculates the transformed moments in z-direction
+
+        :math:`M_{zSA} =  - M_{yS} * sin(\alpha) + M_{zS} * cos(\alpha)`
         """
         return -self.moment_y_s * math.sin(self.alpha) + self.moment_z_s * math.cos(
             self.alpha
@@ -608,7 +650,12 @@ class Hsb2103001:
         return force_f1
 
     def calculate_fastener_tension_force_f2(self) -> List[float]:
-        za = pd.Series(self.fastener_za)
+        r"""
+        :math:`F_{2,i} = M_{ySA}\cdot \frac{\left [ F_{T,all,i} \cdot
+                \left ( z_{Ai} - z_{TA} \right ) \right ]}{\sum \left [ F_{T,all,i} \cdot
+                \left ( z_{Ai} - z_{TA} \right )^2 \right ]}`
+        """
+        za = pd.Series(self.fastener_za)  # pylint: disable=invalid-name
         force_f2 = (
             self.moment_ya
             * (self.fastener_group.tension * (za - self.centroid_zta))
@@ -617,7 +664,12 @@ class Hsb2103001:
         return force_f2
 
     def calculate_fastener_tension_force_f3(self) -> List[float]:
-        ya = pd.Series(self.fastener_ya)
+        r"""
+        :math:`F_{2,i} = M_{zSA}\cdot \frac{\left [ F_{T,all,i} \cdot
+                \left ( y_{Ai} - y_{TA} \right ) \right ]}{\sum \left [ F_{T,all,i} \cdot
+                \left ( y_{Ai} - y_{TA} \right )^2 \right ]}`
+        """
+        ya = pd.Series(self.fastener_ya)  # pylint: disable=invalid-name
         force_f3 = (
             self.moment_za
             * (self.fastener_group.tension * (ya - self.centroid_yta))
@@ -631,6 +683,8 @@ class Hsb2103001:
         To balance the forces it is necessary to transform the applied loading into the principal
         axis system of the fastener group
 
+        :math:`F_{i} = F_{1,i} + F_{2,i} + F_{3,i}`
+
         :param self.force_f1: force 1
         :param self.force_f2: force 2
         :param self.force_f3: force 3
@@ -640,6 +694,11 @@ class Hsb2103001:
         return force_ft
 
     def calculate_fsz(self) -> float:
+        r"""
+        :math: `F_{S,z,i} = F_{z} - \frac{F_{S,all,i}}{\sum F_{S,all,i}} +
+        M_{x,S} \cdot \frac{F_{S,all,i} \cdot (y_{i} - y_{s})}{\sum \left
+        \{ F_{S,all,i} \cdot [(y_{i} - y_{S} )^{2} + (z_{i} - z_{s})^{2}] \right \}}`
+        """
         force_fsz = self.forces.force_z * self.fastener_group.shear / sum(
             self.fastener_group.shear
         ) + self.moment_x_s * (
@@ -668,6 +727,11 @@ class Hsb2103001:
         return force_fsz
 
     def calculate_fsy(self) -> float:
+        r"""
+        :math: `F_{S,y,i} = F_{y} + \frac {F_{S,all,i}}{\sum F_{S,all,i}} -
+        M_{xS} \cdot \frac{F_{S,all,i} \cdot (z_{i} - z_{s})}{\sum \left
+        \{ F_{S,all,i} \cdot [(y_{i} - y_{S} )^{2} + (z_{i} - z_{s})^{2}] \right \}}`
+        """
 
         force_fsy = self.forces.force_y * self.fastener_group.shear / sum(
             self.fastener_group.shear
@@ -697,8 +761,13 @@ class Hsb2103001:
         return force_fsy
 
     def calculate_fastener_shear_forces(self) -> List[float]:
-        """
+        r"""
         3.3.4 Shear forces in the fasteners
+
+        :math:`F_{S,i} = \sqrt{F_{S,z,i}^{2} + F_{S,y,i}^{2}}`
+
+
+
         :param self.force_fsz: force in z-direction
         :param self.force_fsy: force in y-direction
         :return: shear forces
@@ -709,20 +778,20 @@ class Hsb2103001:
         return force_fs
 
     def calculate_fastener_shear_reserve_factor(self) -> float:
-        """
+        r"""
         :math: `RF = F_{s,all,i}/F_{s,i}`
         """
         return np.trunc(100 * self.fastener_group.shear / self.shear_forces) / 100
 
     def calculate_fastener_tension_reserve_factor(self) -> float:
-        """
+        r"""
         :math: `RF = F_{t,all,i}/F_{t,i}`
         """
         return np.trunc(100 * self.fastener_group.tension / self.tension_forces) / 100
 
-    def make_dataframe(self):
+    def make_dict(self):
         """make dataframe including fasteners, attributes, forces and reserve factors"""
-        df = {
+        df_dict = {
             "X": self.fastener_group.x_array,
             "Y": self.fastener_group.y_array,
             "Shear": self.fastener_group.shear,
@@ -735,23 +804,34 @@ class Hsb2103001:
             "Tension Reserve Factor": self.reserve_factor_tension,
         }
 
-        return df
+        return df_dict
 
     def check_fastener_tension(self):
-        """check if fasteners are in tension"""
+        """
+        3.4 Additional forces due to the contact of the joined parts (compression)
+
+        check if fasteners are in tension
+
+
+        """
         tension = []
         for i, t_force in enumerate(self.tension_forces):
             if t_force < 0:
-                print(f"fastener {i} is in compression: {t_force}")
+                # TODO: log warning with compression workaround
+                print(
+                    f"fastener {self.fastener_group.fastener_names[i]} is in compression: {t_force}"
+                )
                 tension.append((i, False))
             else:
-                print(f"fastener {i} is in tension: {t_force}")
+                print(
+                    f"fastener {self.fastener_group.fastener_names[i]} is in tension: {t_force}"
+                )
                 tension.append((i, True))
         return tension
 
     def make_cogs(self):
         """make dataframe including fasteners, attributes, forces and reserve factors"""
-        df = {
+        cogs_dict = {
             "application_point_x": self.application_point.x_coord,
             "application_point_y": self.application_point.y_coord,
             "application_point_z": self.application_point.z_coord,
@@ -760,7 +840,7 @@ class Hsb2103001:
             "centroid_yt": self.fastener_group.centroid_yt,
             "centroid_zt": self.fastener_group.centroid_zt,
         }
-        return df
+        return cogs_dict
 
 
 def create_dummmy_fastener(dummy_fast):
@@ -773,21 +853,27 @@ def create_dummmy_fastener(dummy_fast):
         y_coord=max([fast.y_coord for fast in dummy_fast], key=abs),
         z_coord=np.mean([fast.z_coord for fast in dummy_fast]),
         shear_allowable=0.0001,
-        tension_allowable=99999999,
+        tension_allowable=9999000,
     )
 
     return dummy_fastener
 
 
 def iterate_calc(hsb21030_calc):
+    """3.4 Additional forces due to the contact of the joined parts (compression)
+    The fasteners considered above are loaded in tension only. Compressive forces are taken by
+    contact of the joined parts (point C). If, after the first calculation, individual fasteners
+    show negative tensile forces, a second calculation is required as follows:
+    """
+
     # check if fasteners are in tension
-    # if not, update tension allowable with 0
+    # if not, make dummy fastener and add to fastener group
     # create new fastener_group
     fasteners = hsb21030_calc.fastener_group.fasteners
     fastener_iter = []
     dummy_fast = []
     for i, tension in enumerate(hsb21030_calc.fastener_tension):
-        if tension[1] == False:
+        if not tension[1]:
             dummy_fast_tmp = fasteners[i].copy()
             dummy_fast.append(dummy_fast_tmp)
             rep_fastener = fasteners[i]
@@ -811,5 +897,7 @@ def iterate_calc(hsb21030_calc):
         application_point=hsb21030_calc.application_point,
         reference_point=hsb21030_calc.reference_point,
     )
+
+    print(f"NOTE: fastener {dummy_fastener.name} is added to fastener group")
 
     return iteration

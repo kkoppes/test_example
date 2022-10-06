@@ -363,6 +363,11 @@ def test_integration():
     centroid_yt = -52.5
     centroid_zt = 25
 
+    assert hsb_calc.fastener_group.centroid_ys == centroid_ys
+    assert hsb_calc.fastener_group.centroid_zs == centroid_zs
+    assert hsb_calc.fastener_group.centroid_yt == centroid_yt
+    assert hsb_calc.fastener_group.centroid_zt == centroid_zt
+    
     # HSB 21030-01 Issue D 1978 (page 7)
     # 4.4 Moments about the centroid of the fastener group
     mxs = -45000  # Nmm (shear)

@@ -1,5 +1,4 @@
 {
-    "python.PythonPath": "C:\\Users\\krisk\\.conda\\envs\\pagtools\\python.exe",
     "python.formatting.provider": "black",
     "python.testing.pytestArgs": [
         "tests"
@@ -19,4 +18,5 @@
     120
 ],
 "python.linting.enabled": true
+
 }
