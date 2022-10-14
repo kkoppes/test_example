@@ -164,6 +164,11 @@ class Arc(SubEl):
     :type start_angle: float
     """
 
+    outer_radius: float = field(default=None)
+    inner_radius: float = field(default=None)
+    angle: float = field(default=None)
+    start_angle: float = field(default=None)
+    
     def __init__(self, radius, angle, start_angle=0, **kwargs):
         """
         Init function for Arc sub-class
@@ -217,6 +222,16 @@ class Arc(SubEl):
             * (1.333 / pi * self.inner_radius - self.ycg + self.pos_y) ** 2
         )
 
+    def calc_Iyy_arc(self):
+        """Calculate the moment of inertia of the sub-element around the y-axis"""
+        return (9 * pi**2 - 64) * (
+            self.outer_radius**4 - self.inner_radius**4
+        ) / (72 * pi) + pi / 2 * (
+            self.outer_radius**2
+            * (1.333 / pi * self.outer_radius - self.ycg + self.pos_y) ** 2
+            - self.inner_radius**2
+            * (1.333 / pi * self.inner_radius - self.ycg + self.pos_y) ** 2
+        )
 
 class Fillet(SubEl):
     """Sub-class definition for fillet sub-elements. Used in cross-section definition.
