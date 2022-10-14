@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """supporting functions for the HSB methods"""
 from collections import namedtuple
 import math
@@ -83,15 +85,19 @@ def moment_x_reference_markdown(
     )
     # for LaTeX
     # pylint: disable=anomalous-backslash-in-string
-    markdown_formula = """$$
+    markdown_formula = r"""$$
     M_{xU} = M_{xP} - F_{y}\cdot (z_{P} - z_{U}) + F_{z}\cdot (y_{P} - y_{U})
     $$
 
     """
     markdown_filled = (
         f"$${moment_x_ref} = "
-        f"{moment_x_p} - {force_y} \cdot ({z_coord_p} - {z_coord_u}) + "
-        f"{force_z} \cdot ({y_coord_p} - {y_coord_u})$$"
+        f"{moment_x_p} - {force_y} "
+        r"\cdot "
+        f"({z_coord_p} - {z_coord_u}) + "
+        f"{force_z} "
+        r"\cdot "
+        f"({y_coord_p} - {y_coord_u})$$"
     )
     # pylint: enable=anomalous-backslash-in-string
     return (markdown_formula, markdown_filled)
@@ -178,15 +184,19 @@ def moment_y_reference_markdown(
     )
     # for LaTeX
     # pylint: disable=anomalous-backslash-in-string
-    markdown_formula = """$$
+    markdown_formula = r"""$$
     M_{yU} = M_{yP} + F_{x}\cdot (z_{P} - z_{U}) - F_{z}\cdot (x_{P} - x_{U})
     $$
 
     """
     markdown_filled = (
         f"$${moment_y_ref} = "
-        f"{moment_y_p} + {force_x} \cdot ({z_coord_p} - {z_coord_u}) - "
-        f"{force_z} \cdot ({x_coord_p} - {x_coord_u})$$"
+        f"{moment_y_p} + {force_x} "
+        r"\cdot "
+        f"({z_coord_p} - {z_coord_u}) - "
+        f"{force_z} "
+        r"\cdot "
+        f"({x_coord_p} - {x_coord_u})$$"
     )
     # pylint: enable=anomalous-backslash-in-string
     return markdown_formula, markdown_filled
