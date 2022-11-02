@@ -1,7 +1,11 @@
 {
     "python.formatting.provider": "black",
     "python.testing.pytestArgs": [
-        "tests"
+        "-v",
+        "--cov=pylantir/",
+        "--cov-report=xml",
+        "--pdb",
+        "tests/"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
@@ -17,6 +21,6 @@
     100,
     120
 ],
-"python.linting.enabled": true
+"python.linting.enabled": true,
 
 }

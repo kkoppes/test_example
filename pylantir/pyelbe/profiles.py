@@ -2,6 +2,7 @@
 import logging
 import math
 from math import sin, cos, radians, pi
+from unicodedata import name
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.patches import Wedge, Rectangle
@@ -10,6 +11,20 @@ import numpy as np
 from dataclasses import KW_ONLY, dataclass, field
 from pylantir.scrolls import get_logger
 from pylantir.taters import get_markdown_from_docs
+from pylantir.pyweser.matreel.material import Material
+
+from .geometry_helpers import (
+    area_arc_sector,
+    area_circle_sector,
+    area_rectangle,
+    centroid_arc_sector,
+    centroid_circle_sector,
+    centroid_rectangle,
+    inertia_arc_sector,
+    inertia_circle_sector,
+    inertia_rectangle,
+    translate_inertia,
+)
 
 logger = get_logger(__name__)
 
@@ -25,15 +40,32 @@ class SubEl:
     """
     Class definition for sub-elements. Used in cross-section definition.
 
+    :param name: name of the sub-element
+    :type name: str
+    :param position: position of the sub-element
+    :type position: tuple
+    :param pos_x: x-position of the sub-element
+    :type pos_x: float
+    :param pos_y: y-position of the sub-element
+    :type pos_y: float
+    :param mat_name: name of the material
+    :type mat_name: str
+    :param mat_spec: specification of the material
+    :type mat_spec: str
+    :param fc: facecolor of the sub-element
+    :type fc: str
 
     """
 
+    name: str = None
     sub_type: str = ""
     position: tuple = field(default=None)
     pos_x: float = field(default=None)
     pos_y: float = field(default=None)
-    fc: str = field(default="tab=blue")
-    material: str = field(default=None)
+    fc: str = field(default="blue")
+    mat_name: str = field(default=None)
+    mat_spec: str = field(default=None)
+    material: Material = field(default=None)
 
     def __post_init__(self, **kwargs):
         # check if either position or pos_x and pos_y are defined
@@ -49,11 +81,15 @@ class SubEl:
         if self.pos_x is not None and self.pos_y is not None:
             self.position = (self.pos_x, self.pos_y)
 
-        if kwargs.get("fc"):
-            self.fc = kwargs.get("fc")
-
-        if kwargs.get("material") is not None:
-            self.material = kwargs.get("material")
+        if self.mat_name is not None:
+            if self.mat_spec is not None:
+                self.material = Material(
+                    name=self.mat_name, specification=self.mat_spec
+                )
+            else:
+                logger.warning(
+                    f"{self.name}: For material definition, both name and spec are needed"
+                )
 
 
 @dataclass
@@ -93,52 +129,37 @@ class Rect(SubEl):
         self.height = height
         self.angle = angle
 
-        self.xcg = self.calc_xcg_rect()
-        self.ycg = self.calc_ycg_rect()
-        self.area = self.calc_area_rect()
-        self.Ixx = self.calc_Ixx_rect()
-        self.Iyy = self.calc_Iyy_rect()
         self.alpha = radians(self.angle)
+        # self.xcg = self.calc_xcg_rect()
+        # self.ycg = self.calc_ycg_rect()
+        self.xcg, self.ycg = centroid_rectangle(
+            width=self.width, height=self.height, angle=self.angle
+        )
+        self.xcg += self.pos_x
+        self.ycg += self.pos_y
 
-    def calc_xcg_rect(self):
-        """Calculate the x-coordinate of the center of gravity of the sub-element"""
-        if self.angle == 0:
-            return self.pos_x + self.width / 2
-        else:
-            return (
-                self.pos_x
-                + cos(self.alpha) * (self.width / 2)
-                + sin(self.alpha) * (self.height / 2)
-            )
+        self.area = area_rectangle(
+            width=self.width, height=self.height
+        )  # self.calc_area_rect()
+        self.Ixg, self.Iyg = inertia_rectangle(
+            width=self.width, height=self.height, angle=self.angle
+        )
 
-    def calc_ycg_rect(self):
-        """Calculate the y-coordinate of the center of gravity of the sub-element"""
-        if self.angle == 0:
-            return self.pos_y + self.height / 2
-        else:
-            return (
-                self.pos_y
-                + cos(self.alpha) * (self.height / 2)
-                - sin(self.alpha) * (self.width / 2)
-            )
+        # self.calc_Ixx_rect()
+        # self.Iyy = self.calc_Iyy_rect()
+        # if self.angle != 0:
+        #   self.Ixx_rotated = self.calc_Ixx_rect_rotated()
+        #   self.Iyy_rotated = self.calc_Iyy_rect_rotated()
 
-    def calc_area_rect(self):
-        """Calculate the area of the sub-element"""
-        return self.width * self.height
+    def calc_Ixx_rect_rotated(self):
+        """Calculate the moment of inertia of the sub-element around the x-axis, rotated with alpha"""
+        return (self.Ixx + self.Iyy) / 2 + cos(2 * self.alpha) * (
+            self.Ixx - self.Iyy
+        ) / 2
 
-    def calc_Ixx_rect(self):
-        """Calculate the moment of inertia of the sub-element around the x-axis"""
-        if self.angle == 0:
-            return self.width * self.height**3 / 12
-        else:
-            (self.Ixx + self.Iyy) / 2 + cos(2 * self.alpha) * (self.Ixx - self.Iyy) / 2
-
-    def calc_Iyy_rect(self):
-        """Calculate the moment of inertia of the sub-element around the y-axis"""
-        if self.angle == 0:
-            return self.height * self.width**3 / 12
-        else:
-            (self.Ixx + self.Iyy) / 2 - cos(2 * self.alpha) * (self.Ixx - self.Iyy) / 2
+    def calc_Iyy_rect_rotated(self):
+        """Calculate the moment of inertia of the sub-element around the y-axis, rotated with alpha"""
+        (self.Ixx + self.Iyy) / 2 - cos(2 * self.alpha) * (self.Ixx - self.Iyy) / 2
 
 
 @dataclass
@@ -157,7 +178,7 @@ class Arc(SubEl):
     :type start_angle: float
     """
 
-    def __init__(self, outer_radius, inner_radius, angle, start_angle=0, **kwargs):
+    def __init__(self, outer_radius, inner_radius, angle=180, start_angle=0, **kwargs):
         """
         Init function for Arc sub-class
 
@@ -173,20 +194,43 @@ class Arc(SubEl):
         :type Iyy: float
 
         """
-        super().__init__(sub_type="Arc",**kwargs)
+        super().__init__(sub_type="Arc", **kwargs)
 
         self.radius = inner_radius
         self.outer_radius = outer_radius
         self.inner_radius = inner_radius
-        
+
         self.angle = angle
         self.start_angle = start_angle
+        self.end_angle = self.start_angle + self.angle
 
-        self.xcg = self.calc_xcg_arc()
-        self.ycg = self.calc_ycg_arc()
-        self.area = self.calc_area_arc()
-        self.Ixx = self.calc_Ixx_arc()
-        self.Iyy = self.calc_Iyy_arc()
+        self.thickness = self.outer_radius - self.inner_radius
+
+        logger.debug(f"{self.name}: start_angle = {self.start_angle}")
+        logger.debug(f"{self.name}: end_angle = {self.end_angle}")
+
+        self.area = area_arc_sector(
+            radius=self.radius,
+            thickness=self.thickness,
+            start_angle=self.start_angle,
+            end_angle=self.end_angle,
+        )  # self.calc_area_arc()
+
+        self.xcg, self.ycg = centroid_arc_sector(
+            radius=self.radius,
+            thickness=self.thickness,
+            start_angle=self.start_angle,
+            end_angle=self.end_angle,
+        )  # self.calc_xcg_arc()
+
+        self.Ixg, self.Iyg = inertia_arc_sector(
+            radius=self.radius,
+            thickness=self.thickness,
+            start_angle=self.start_angle,
+            end_angle=self.end_angle,
+        )
+
+        # self.Iyy = self.calc_Iyy_arc()
 
     def calc_xcg_arc(self):
         """Calculate the x-coordinate of the center of gravity of the sub-element"""
@@ -215,10 +259,7 @@ class Arc(SubEl):
 
     def calc_Iyy_arc(self):
         "Calculate the moment of inertia of the sub-element around the y-axis"
-        return (pi / 8) * (self.outer_radius ** 4 - self.inner_radius ** 4)
-
-
-
+        return (pi / 8) * (self.outer_radius**4 - self.inner_radius**4)
 
 
 class Fillet(SubEl):
@@ -234,9 +275,6 @@ class Fillet(SubEl):
     :param fc: Color for the matplotlib representation of the sub-element, should match matplotlib
         color list.
     :type fc: str,optional
-    :param material: Material of the sub-element. Should be an object from the pyelbe.material_data
-    function.
-    :type material: object, optional
 
     """
 
@@ -261,13 +299,13 @@ class Fillet(SubEl):
         """
         super().__init__(sub_type="Fillet", **kwargs)
         self.radius = radius
-        #@properties?
+        # @properties?
         self.xcg = self.calculate_xcg_fillet()
         self.ycg = self.calculate_ycg_fillet()
 
         self.area = self.calculate_area_fillet()
-        self.Ixx = self.calculate_Ixx_fillet()
-        self.Iyy = self.Ixx
+        self.Ixg = self.calculate_Ixx_fillet()
+        self.Iyg = self.Ixg
         self.Ixy = self.calculate_Ixy_fillet()
 
     def calculate_xcg_fillet(self):
@@ -284,12 +322,12 @@ class Fillet(SubEl):
 
     def calculate_Ixx_fillet(self):
         """Calculate the moment of inertia of the sub-element around the x-axis"""
-        # return (16 - 5 * pi) / 16 * self.radius**4
+        # TODO: inertia of square - circle?
         return 0
 
     def calculate_Ixy_fillet(self):
         """Calculate the moment of inertia of the sub-element around the xy-axis"""
-        # return (19 - 6 * pi) / 24 * self.radius**4
+
         return 0
 
 
@@ -307,19 +345,15 @@ class QArc(SubEl):
     :param inner_radius: Radius of the quarter arc
     :type inner_radius: float
     :param beta: opening angle based from origin point to arc: Example: 45 for a sub-element
-    based on the 1st quadrant of the circle (top-right)
+    based on the 1st quadrant of the circle (top-right) TODO: discuss meaning with KH
 
     :param fc: Color for the matplotlib representation of the sub-element, should match matplotlib
     color list.
     :type fc: str,optional
-    :param material: Material of the sub-element. Should be an object from the pyelbe.material_data
-    function.
-    :type material: object, optional
-
     """
 
     def __init__(self, outer_radius, inner_radius, beta, **kwargs):
-        """Init function for auarter-arced sub-class
+        """Init function for quarter-arced sub-class
 
         :param xcg: x-coordinate of the center of gravity of the sub-element
         :type xcg: float
@@ -336,15 +370,38 @@ class QArc(SubEl):
 
         """
         super().__init__(sub_type="QArc", **kwargs)
-        self.alpha = 45
+        self.alpha = 90
         self.outer_radius = outer_radius
-        self.inner_radius = inner_radius
+        self.inner_radius = self.radius = inner_radius
+        self.thickness = self.outer_radius - self.inner_radius
         self.beta = beta
-        self.xcg = self.calculate_xcg_qarc()
-        self.ycg = self.calculate_ycg_qarc()
-        self.area = self.calculate_area_qarc()
-        self.Ixx = self.calculate_Ixx_qarc()
-        self.Iyy = self.calculate_Iyy_qarc()
+        self.start_angle = self.beta - 45
+        self.end_angle = self.start_angle + self.alpha
+
+        self.area = area_arc_sector(
+            radius=self.radius,
+            thickness=self.thickness,
+            start_angle=self.start_angle,
+            end_angle=self.end_angle,
+        )
+        # self.calculate_area_qarc()
+
+        # self.xcg = self.calculate_xcg_qarc()
+        # self.ycg = self.calculate_ycg_qarc()
+        self.xcg, self.ycg = centroid_arc_sector(
+            radius=self.radius,
+            thickness=self.thickness,
+            start_angle=self.start_angle,
+            end_angle=self.end_angle,
+        )
+        #self.Ixx = self.calculate_Ixx_qarc()
+        #self.Iyy = self.calculate_Iyy_qarc()
+        self.Ixx, self.Iyy = inertia_arc_sector(
+            radius=self.radius,
+            thickness=self.thickness,
+            start_angle=self.start_angle,
+            end_angle=self.end_angle,
+        )
 
     def calculate_xcg_qarc(self):
         """Calculate the x-coordinate of the center of gravity of the sub-element"""
@@ -399,6 +456,7 @@ class Profile:
     """
 
     subel_list: list
+    name: str = field(default="Profile")
 
     def __post_init__(self):
         """Init function for Profile class
@@ -424,8 +482,12 @@ class Profile:
         self.area = self.calculate_area()
         self.x_cg = self.calculate_xcg()
         self.y_cg = self.calculate_ycg()
-        self.Ix = self.calculate_Ix()
-        self.Iy = self.calculate_Iy()
+        self.Ixg = self.calculate_Ix()
+        self.Iyg = self.calculate_Iy()
+
+        # inertia of the profile around the origin
+        self.Ixx = translate_inertia(self.Ixg, self.area, self.y_cg)
+        self.Iyy = translate_inertia(self.Iyg, self.area, self.x_cg)
 
         # if different materials are used, the mechanical values are recalculated according to the
         # material density
@@ -438,14 +500,14 @@ class Profile:
         # TODO: marry with the Matreel library
 
         self.EA = 0
-        #self.x_cg = 0
-        #self.y_cg = 0
+        # self.x_cg = 0
+        # self.y_cg = 0
         self.EIx = 0
         self.EIy = 0
-        #self.Ix
-        #self.Iy
-        #try:
-        #if len(self.mat_list) == len(self.subel_list):
+        # self.Ix
+        # self.Iy
+        # try:
+        # if len(self.mat_list) == len(self.subel_list):
         #    self.EA = (
         #        round(sum(i.material[5] * i.area for i in self.subel_list) * 100)
         #        / 100
@@ -480,7 +542,7 @@ class Profile:
         #    )
         #    self.Ix = int(self.EIx / (self.EA / self.area))
         #    self.Iy = int(self.EIy / (self.EA / self.area))
-        #else:
+        # else:
         #    logger.info("Material not defined for all sub-elements")
 
     def calculate_area(self):
@@ -505,182 +567,9 @@ class Profile:
     def calculate_Ix(self):
         """Calculate the moment of inertia of the profile around the x-axis"""
 
-        return int(
-            sum(i.Ixx + i.area * (i.ycg - self.y_cg) ** 2 for i in self.subel_list)
-        )
+        return sum(i.Ixg + i.area * (i.ycg - self.y_cg) ** 2 for i in self.subel_list)
 
     def calculate_Iy(self):
         """Calculate the moment of inertia of the profile around the y-axis"""
 
-        return int(
-            sum(i.Iyy + i.area * (i.xcg - self.x_cg) ** 2 for i in self.subel_list)
-        )
-
-@dataclass
-class LProfile:
-    """Profile class for an L profile.
-
-    :param b: width of the profile
-    :type b: float
-    :param h: height of the profile
-    :type h: float
-    :param profile_type: type of profile ("extruded" or "bended")
-    :type profile_type: str
-    :param t_fx: thickness of the horizontal flange
-    :type t_fx: float
-    :param t_fy: thickness of the vertical flange (=equal to t_fx with bended profiles)
-    :type t_fy: float
-    :param r: radius of the fillets / qarc
-    :type r: float
-    :param mat: material of the profile
-    :type mat: list
-    :param x: x-coordinate of origin of the profile
-    :type x: float
-    :param y: y-coordinate of origin of the profile
-    :type y: float
-
-    """
-
-    b: float
-    h: float
-    profile_type: str
-    t_fx: float
-    t_fy: float = field(default=None)
-    radius: float = field(default=0)
-    material: str = field(default=None)
-    x_orig: float = field(default=0)
-    y_orig: float = field(default=0)
-    
-    def __post_init__(self, *args, **kwargs):
-        """Init function for LProfile class"""
-
-        if self.profile_type == "extruded":
-            self.t_fy = self.t_fy
-        elif self.profile_type == "bended":
-            self.t_fy = self.t_fx
-
-        if self.radius is None and self.profile_type == "bended":
-            logging.warning(
-                "No radius defined for bended profile, radius is set to 2 t"
-            )
-            self.radius = 2 * self.t_fx
-
-        if self.radius is None and self.profile_type == "extruded":
-            logging.warning(
-                "No radius defined for extruded profile, radius is set to 2 * t_fx"
-            )
-            self.radius = 2 * self.t_fx
-
-        self.subel_list = self.create_subel_list()
-
-        #super().__init__(self.subel_list)
-        self.profile = Profile(self.subel_list)
-
-    def create_subel_list(self):
-        """Create a list of sub-elements for the profile
-
-        :return: list of sub-elements
-        :rtype: list
-        """
-        subel_list = []
-
-        if self.profile_type == "extruded":
-            # build up list from 2 rect and 1 fillet
-            subel_list.append(
-                Rect(
-                    width=self.b,
-                    height=self.t_fx,
-                    pos_x=self.x_orig + self.b / 2,
-                    pos_y=self.y_orig + self.t_fx / 2,
-                    material=self.material,
-                    angle=0,
-                )
-            )
-
-            subel_list.append(
-                Rect(
-                    width=self.t_fy,
-                    height=self.h,
-                    pos_x=self.x_orig + self.t_fy / 2,
-                    pos_y=self.y_orig - self.h / 2,
-                    material=self.material,
-                    angle=0,
-                )
-            )
-            subel_list.append(
-                Fillet(
-                    width=self.t_fx,
-                    height=self.h - 2 * self.t_fx,
-                    pos_x=self.x_orig + self.b / 2,
-                    pos_y=self.y_orig,
-                    material=self.material,
-                    angle=0,
-                    radius=self.radius,
-                )
-            )
-
-        elif self.profile_type == "bended":
-            # build up list from 2 rect and 1 qarc
-            
-            subel_list.append(
-                Rect(
-                    width=self.b - self.t_fy - self.radius,
-                    height=self.t_fx,
-                    pos_x=self.x_orig + self.t_fx / 2,
-                    pos_y=self.y_orig + self.t_fy + self.radius + ((self.b - self.t_fy - self.radius) / 2),
-                    material=self.material,
-                    angle=0,
-                )
-            )
-            subel_list.append(
-                Rect(
-                    width=self.t_fy,
-                    height=self.h - self.t_fx - self.radius,
-                    pos_x=self.x_orig + self.t_fy / 2,
-                    pos_y=self.y_orig + self.t_fx + self.radius + ((self.h - self.t_fx - self.radius) / 2),
-                    material=self.material,
-                    angle=0,
-                )
-            )
-            subel_list.append(
-                QArc(
-                    outer_radius=self.radius + self.t_fx,
-                    inner_radius=self.radius,
-                    pos_x=self.x_orig + self.t_fy + self.radius,
-                    pos_y=self.y_orig + self.t_fx + self.radius,
-                    material=self.material,
-                    beta=90               
-                )
-            )
-
-        return subel_list
-    
-    #TODO: add average width of section depending on support
-
-    def get_profile(self):
-        return self.profile
-
-    @property
-    def area(self):
-        """Area of the profile"""
-        return self.profile.area
-    
-    @property
-    def x_cg(self):
-        """x-coordinate of the center of gravity of the profile"""
-        return self.profile.x_cg
-    
-    @property
-    def y_cg(self):
-        """y-coordinate of the center of gravity of the profile"""
-        return self.profile.y_cg
-    
-    @property
-    def Ix(self):
-        """Moment of inertia of the profile around the x-axis"""
-        return self.profile.Ix
-    
-    @property
-    def Iy(self):
-        """Moment of inertia of the profile around the y-axis"""
-        return self.profile.Iy
+        return sum(i.Iyg + i.area * (i.xcg - self.x_cg) ** 2 for i in self.subel_list)
